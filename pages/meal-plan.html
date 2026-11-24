@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quick Week Meal Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+*{box-sizing:border-box} [hidden]{display:none!important} img{max-width:100%}
+/* Layout: weekly plan + recipes in the main column, grocery checklist in a sticky side column (moves to the top on phones). */
+:root{
+  --bg:#f6f7f2; --surface:#ffffff; --fg:#1d2a21; --muted:#5d6b61; --line:#dfe4da;
+  --accent:#2f6b3c; --accent-soft:#e3efe2; --tomato:#c8553d; --done:#9aa59c;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Inter", system-ui, -apple-system, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a16; --surface:#1c241f; --fg:#e6ece6; --muted:#9db0a2; --line:#2e3a32;
+  --accent:#7cc48a; --accent-soft:#233528; --tomato:#e88a72; --done:#5f6e64; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a16; --surface:#1c241f; --fg:#e6ece6; --muted:#9db0a2; --line:#2e3a32;
+  --accent:#7cc48a; --accent-soft:#233528; --tomato:#e88a72; --done:#5f6e64; color-scheme:dark}
+
+.back{max-width:1180px;margin:0 auto 12px;font-size:13px}.back a{color:var(--accent)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 60px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:36px;align-items:start}
+header{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:16px;border-bottom:2px solid var(--fg);padding-bottom:16px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,5vw,46px);line-height:1;margin:0;letter-spacing:-.02em;text-wrap:balance}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);margin:8px 0 0;max-width:60ch}
+.rules{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-family:var(--mono);font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:99px;background:var(--surface);white-space:nowrap}
+main{display:flex;flex-direction:column;gap:40px;min-width:0}
+h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0 0 4px;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:0 0 16px}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* week table */
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--bg)}
+td.day{font-family:var(--display);font-weight:600;font-size:16px;white-space:nowrap}
+td.off{color:var(--muted);font-style:italic}
+.mins{font-family:var(--mono);font-size:11px;color:var(--accent);display:block}
+
+/* prep */
+.prep{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;counter-reset:s}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.step b{display:block;font-family:var(--display);font-size:16px;margin-bottom:2px}
+.step .t{font-family:var(--mono);font-size:11px;color:var(--tomato)}
+.step p{margin:6px 0 0;font-size:14px;color:var(--muted)}
+
+/* recipes */
+.recipes{display:flex;flex-direction:column;gap:8px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+summary{cursor:pointer;list-style:none;display:flex;gap:12px;align-items:baseline;justify-content:space-between;padding:12px 16px;flex-wrap:wrap}
+summary::-webkit-details-marker{display:none}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
+summary .n{font-family:var(--display);font-weight:600;font-size:17px}
+summary .n small{font-family:var(--body);font-weight:500;color:var(--muted);font-size:12px;margin-right:8px;text-transform:uppercase;letter-spacing:.08em}
+summary .mins{display:inline}
+details[open] summary{border-bottom:1px solid var(--line)}
+.rbody{padding:12px 16px 16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:20px}
+.rbody ul,.rbody ol{margin:6px 0 0;padding-left:18px;font-size:14px}
+.rbody li{margin-bottom:4px}
+.tip{grid-column:1/-1;font-size:13px;background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:0}
+
+/* grocery list */
+aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);background:var(--surface);border:1px solid var(--line);border-radius:12px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;min-width:0}
+.listhead{padding:16px 18px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.listhead h2{margin:0}
+.progress{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+.count{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.listbody{overflow-y:auto;padding:6px 18px 18px}
+.aisle{margin-top:14px}
+.aisle h3{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--tomato);margin:0 0 4px;font-weight:600}
+label.item{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:start;padding:7px 0;border-bottom:1px dashed var(--line);cursor:pointer;font-size:14px}
+label.item input{width:17px;height:17px;margin:2px 0 0;accent-color:var(--accent)}
+label.item .q{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;text-align:right}
+label.item .for{display:block;font-size:12px;color:var(--muted)}
+label.item.got .nm{text-decoration:line-through;color:var(--done)}
+label.item.pantry .nm::after{content:"check pantry";margin-left:6px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 4px;vertical-align:1px}
+.toast{font-size:12px;color:var(--accent);min-height:1em}
+.toast[hidden]{display:none}
+.copyfallback{width:100%;min-height:120px;font-family:var(--mono);font-size:12px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px}
+.store{font-size:13px;color:var(--muted);margin:0}
+.store a{color:var(--accent)}
+
+@media (max-width:900px){
+  .wrap{grid-template-columns:minmax(0,1fr)}
+  aside{position:static;max-height:none;order:-1}
+  header{order:-2}
+  .rbody{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){.progress i{transition:none}}
+</style>
+</head>
+<body>
+<p class="back"><a href="./">&larr; All pages</a></p>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">One person · Sunday to Saturday</div>
+      <h1>Quick Week <span>Meal Plan</span></h1>
+      <p class="sub">Five grab-and-go work breakfasts and lunches, seven dinners. Every dinner is 30 minutes or less, and you only do one prep session on Sunday.</p>
+    </div>
+    <div class="rules">
+      <span class="chip">Dinners ≤ 30 min</span>
+      <span class="chip">~40 min Sunday prep</span>
+      <span class="chip">1 shopping trip</span>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>The week</h2>
+      <p class="lede">Breakfast and lunch are made ahead, so on workdays you just grab them from the fridge.</p>
+      <div class="tablebox"><table id="week"></table></div>
+    </section>
+
+    <section>
+      <h2>Sunday prep</h2>
+      <p class="lede">Do these after shopping. Start the chicken first, and do the rest while it bakes.</p>
+      <div class="prep" id="prep"></div>
+    </section>
+
+    <section>
+      <h2>Recipes</h2>
+      <p class="lede">Tap a meal to see its ingredients and steps. Each one serves one person unless it says otherwise.</p>
+      <div class="recipes" id="recipes"></div>
+    </section>
+  </main>
+
+  <aside>
+    <div class="listhead">
+      <h2>Grocery list</h2>
+      <div class="progress"><i id="bar"></i></div>
+      <div class="count" id="count"></div>
+      <div class="btns">
+        <button class="primary" id="copyBtn" type="button">Copy what's left</button>
+        <button id="hidePantry" type="button">Hide pantry items</button>
+        <button id="resetBtn" type="button">Uncheck all</button>
+      </div>
+      <div class="toast" id="toast" hidden></div>
+      <textarea class="copyfallback" id="fallback" hidden readonly aria-label="List text to copy"></textarea>
+      <p class="store">"Copy what's left" gives you plain text you can paste into the shopping list in the <a href="https://stopandshop.com" target="_blank" rel="noopener">Stop &amp; Shop</a> app. Your checkmarks are saved in this browser.</p>
+    </div>
+    <div class="listbody" id="list"></div>
+  </aside>
+</div>
+
+<script>
+const WEEK = [
+  ["Sun", null, null, ["Veggie omelet, toast & fruit", 15]],
+  ["Mon", ["Overnight oats", 0], ["Chicken burrito bowl", 2], ["Sheet-pan salmon, sweet potato & broccoli", 25]],
+  ["Tue", ["Yogurt parfait + 2 hard-boiled eggs", 0], ["Chicken burrito bowl", 2], ["Turkey tacos", 20]],
+  ["Wed", ["Overnight oats", 0], ["Chicken burrito bowl", 2], ["Chicken & veggie stir-fry", 20]],
+  ["Thu", ["Yogurt parfait + 2 hard-boiled eggs", 0], ["Turkey hummus wrap + carrots & apple", 3], ["Turkey & black bean quesadilla", 15]],
+  ["Fri", ["Overnight oats", 0], ["Turkey hummus wrap + carrots & apple", 3], ["Garlic shrimp & zucchini pasta", 20]],
+  ["Sat", null, null, ["Chicken sausage, peppers & potatoes sheet pan", 30]],
+];
+
+const PREP = [
+  ["Bake the chicken", "25 min, mostly hands-off", "Season about 1.5 lb of the chicken breast with taco seasoning and olive oil. Bake at 425°F for 20–22 min. Slice it, then split into 3 containers. Keep the rest of the chicken raw in the fridge for Wednesday."],
+  ["Hard-boil 4 eggs", "12 min", "Cover the eggs with water and bring it to a boil. Turn off the heat, cover, and wait 10 min. Move them to cold water and keep them in their shells."],
+  ["Build 3 burrito bowls", "10 min", "Divide 1½ rice pouches, a rinsed can of black beans, ¾ cup frozen corn, salsa, and cheese between the 3 containers. Add lettuce and avocado on the day you eat it."],
+  ["Make 3 overnight oats jars", "5 min", "In each jar: ½ cup oats, ½ cup milk, ⅓ cup Greek yogurt, 1 tbsp chia, a little honey. Put frozen berries on top. They keep 4 days, so make Friday's jar on Wednesday night if you like it fresher."],
+];
+
+const RECIPES = [
+  {day:"Sun", name:"Veggie omelet, toast & fruit", mins:15,
+   ing:["3 eggs","Handful of spinach","¼ bell pepper, diced","2 tbsp shredded cheese","1–2 slices whole-grain toast","Banana or apple"],
+   steps:["Sauté the pepper in a little oil for 2 min, then add the spinach until it wilts.","Pour in the beaten eggs. Let them set for 2–3 min, add the cheese, and fold.","Serve with toast and fruit."]},
+  {day:"Mon", name:"Sheet-pan salmon, sweet potato & broccoli", mins:25,
+   ing:["1 salmon fillet (6–8 oz)","1 sweet potato, cut into ¾\" cubes","1 broccoli crown, cut into florets","Olive oil, salt, pepper, garlic powder","½ lemon"],
+   steps:["Heat the oven to 425°F. Toss the sweet potato in oil and roast it for 10 min.","Add the broccoli and the seasoned salmon to the pan. Roast 12–14 min, until the salmon flakes.","Squeeze the lemon over it."],
+   tip:"Frozen salmon fillets are fine. Thaw one in the fridge on Sunday night."},
+  {day:"Tue", name:"Turkey tacos", mins:20,
+   ing:["1 lb ground turkey (cook it all)","1 packet taco seasoning","3 small whole-wheat tortillas","Shredded lettuce, salsa, cheese, ½ avocado"],
+   steps:["Brown the turkey for 7–8 min, breaking it up as it cooks.","Add the seasoning and ⅔ cup water and simmer 5 min.","Fill the tortillas. Save half the meat for Thursday."],
+   tip:"This cooks Thursday's filling too, so Thursday dinner takes 15 minutes."},
+  {day:"Wed", name:"Chicken & veggie stir-fry", mins:20,
+   ing:["The rest of the raw chicken (~½ lb), cubed","½ bag frozen stir-fry vegetables","3 tbsp stir-fry or teriyaki sauce","1 microwave brown rice pouch (half of it)"],
+   steps:["Sear the chicken in a hot pan with oil for 5–6 min, until cooked through.","Add the frozen veggies and cook 5 min.","Stir in the sauce for 1 min and serve over the rice."]},
+  {day:"Thu", name:"Turkey & black bean quesadilla", mins:15,
+   ing:["Leftover taco turkey","½ can black beans, rinsed","½ cup shredded cheese","2 large whole-wheat tortillas","Salsa, plus spinach as a side salad"],
+   steps:["Spread the turkey, beans and cheese over half of each tortilla, then fold.","Cook in a dry pan for 3 min per side, until crisp.","Cut into wedges and serve with salsa and the salad."]},
+  {day:"Fri", name:"Garlic shrimp & zucchini pasta", mins:20,
+   ing:["3 oz whole-wheat spaghetti","½ lb frozen raw shrimp, thawed under cold water","1 zucchini, sliced","Handful of cherry tomatoes, halved","2 cloves garlic, parmesan, olive oil"],
+   steps:["Boil the pasta for 9–10 min.","Meanwhile, sauté the zucchini for 3 min. Add the garlic and shrimp and cook 3–4 min, until pink.","Add the tomatoes and the drained pasta, a splash of pasta water, and parmesan."],
+   tip:"Freeze the other half of the shrimp for next week."},
+  {day:"Sat", name:"Chicken sausage, peppers & potatoes sheet pan", mins:30,
+   ing:["2 precooked chicken sausage links, sliced","½ bag baby potatoes, halved","2 bell peppers, sliced","1 red onion, sliced","Olive oil, Italian seasoning"],
+   steps:["Heat the oven to 425°F. Roast the potatoes for 10 min.","Add the peppers, onion and sausage and toss with oil and seasoning.","Roast 15–18 min more."],
+   tip:"Freeze the other 2 sausage links."},
+  {day:"Lunch", name:"Turkey hummus wrap (Thu & Fri)", mins:3,
+   ing:["1 large whole-wheat tortilla","4 oz deli turkey","2 tbsp hummus","Spinach, sliced cucumber","Baby carrots + an apple on the side"],
+   steps:["Spread the hummus, layer everything else on, and roll it tight.","Wrap it in foil. You can make it the night before."]},
+];
+
+// [aisle, [name, qty, for, pantry?]]
+const LIST = [
+  ["Produce", [
+    ["Bananas", "1 bunch", "Breakfast, snacks"],
+    ["Apples", "4", "Lunch sides, snacks"],
+    ["Avocados", "3", "Bowls, tacos"],
+    ["Lemon", "1", "Salmon"],
+    ["Baby spinach", "1 tub (10 oz)", "Omelet, wraps, salad, pasta"],
+    ["Shredded lettuce or romaine hearts", "1 bag / 3-pack", "Bowls, tacos"],
+    ["Broccoli", "1 crown", "Salmon dinner"],
+    ["Sweet potato", "1 large", "Salmon dinner"],
+    ["Bell peppers", "3", "Omelet, sheet pan"],
+    ["Red onion", "1", "Sheet pan"],
+    ["Zucchini", "1", "Shrimp pasta"],
+    ["Cherry tomatoes", "1 pint", "Pasta, salad"],
+    ["Cucumber", "1", "Wraps"],
+    ["Baby carrots", "1 bag (1 lb)", "Lunch sides"],
+    ["Baby potatoes", "1 bag (1.5 lb)", "Sheet pan"],
+    ["Garlic", "1 head", "Pasta"],
+  ]],
+  ["Meat & seafood", [
+    ["Boneless chicken breast", "~2 lb", "Burrito bowls, stir-fry"],
+    ["Lean ground turkey (93%)", "1 lb", "Tacos, quesadillas"],
+    ["Salmon fillet", "1 (6–8 oz)", "Mon dinner"],
+    ["Frozen raw shrimp, peeled", "1 bag (1 lb)", "Fri dinner"],
+    ["Precooked chicken sausage", "1 pack (4 links)", "Sat dinner"],
+  ]],
+  ["Deli", [
+    ["Sliced deli turkey (low sodium)", "½ lb", "Thu & Fri wraps"],
+    ["Hummus", "1 tub (10 oz)", "Wraps, snacks"],
+  ]],
+  ["Dairy & eggs", [
+    ["Eggs", "1 dozen", "Hard-boiled eggs, omelet"],
+    ["Plain Greek yogurt (nonfat or 2%)", "1 tub (32 oz)", "Oats, parfaits"],
+    ["Milk (2% or unsweetened almond)", "½ gallon", "Overnight oats"],
+    ["Shredded Mexican cheese", "1 bag (8 oz)", "Bowls, tacos, quesadillas, omelet"],
+    ["Grated parmesan", "1 small tub", "Pasta"],
+  ]],
+  ["Bread & tortillas", [
+    ["Whole-wheat tortillas, large", "1 pack (8 ct)", "Wraps, quesadillas, tacos"],
+    ["Whole-grain bread", "1 loaf", "Omelet toast"],
+  ]],
+  ["Grains & cans", [
+    ["Old-fashioned rolled oats", "1 canister", "Overnight oats"],
+    ["Chia seeds", "1 small bag", "Overnight oats"],
+    ["Low-sugar granola", "1 bag", "Parfaits"],
+    ["Microwave brown rice pouches", "3", "Bowls, stir-fry"],
+    ["Whole-wheat spaghetti", "1 box", "Shrimp pasta"],
+    ["Black beans", "2 cans", "Bowls, quesadillas"],
+    ["Salsa", "1 jar (16 oz)", "Bowls, tacos, quesadillas"],
+    ["Stir-fry or teriyaki sauce (lower sodium)", "1 bottle", "Stir-fry"],
+    ["Taco seasoning", "2 packets", "Chicken, turkey"],
+  ]],
+  ["Frozen", [
+    ["Mixed berries", "1 bag (2–3 lb)", "Oats, parfaits"],
+    ["Stir-fry vegetable blend", "1 bag", "Stir-fry"],
+    ["Sweet corn", "1 small bag", "Burrito bowls"],
+  ]],
+  ["Snacks (optional)", [
+    ["Unsalted almonds", "1 bag", "Afternoon snack"],
+    ["String cheese", "1 pack", "Afternoon snack"],
+  ]],
+  ["Pantry staples", [
+    ["Olive oil", "", "Most dinners", true],
+    ["Salt & pepper", "", "Everything", true],
+    ["Garlic powder", "", "Salmon", true],
+    ["Italian seasoning", "", "Sheet pan", true],
+    ["Honey", "", "Overnight oats", true],
+    ["Foil + 3 meal-prep containers + 3 jars", "", "Sunday prep", true],
+  ]],
+];
+
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// week table
+$("week").innerHTML = "<thead><tr><th>Day</th><th>Breakfast</th><th>Lunch</th><th>Dinner</th></tr></thead><tbody>" +
+  WEEK.map(([d,b,l,dn]) => {
+    const cell = m => m ? `<td>${esc(m[0])}<span class="mins">${m[1] ? m[1]+" min" : "grab & go"}</span></td>` : `<td class="off">Weekend, your choice</td>`;
+    return `<tr><td class="day">${d}</td>${cell(b)}${cell(l)}<td>${esc(dn[0])}<span class="mins">${dn[1]} min</span></td></tr>`;
+  }).join("") + "</tbody>";
+
+$("prep").innerHTML = PREP.map(([b,t,p]) => `<div class="step"><b>${b}</b><span class="t">${t}</span><p>${esc(p)}</p></div>`).join("");
+
+$("recipes").innerHTML = RECIPES.map(r => `
+  <details><summary><span class="n"><small>${r.day}</small>${esc(r.name)}</span><span class="mins">${r.mins} min</span></summary>
+  <div class="rbody"><div><div class="eyebrow">You need</div><ul>${r.ing.map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>
+  <div><div class="eyebrow">Steps</div><ol>${r.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></div>
+  ${r.tip ? `<p class="tip">${esc(r.tip)}</p>` : ""}</div></details>`).join("");
+
+// grocery checklist
+const KEY = "quickweek-checked-v1", PKEY = "quickweek-hidepantry";
+let checked = {}, hidePantry = false;
+try { checked = JSON.parse(localStorage.getItem(KEY)) || {}; hidePantry = localStorage.getItem(PKEY) === "1"; } catch(e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(checked)); localStorage.setItem(PKEY, hidePantry ? "1" : "0"); } catch(e) {} };
+
+let n = 0;
+$("list").innerHTML = LIST.map(([aisle, items]) => `<div class="aisle" data-aisle="${esc(aisle)}"><h3>${esc(aisle)}</h3>` +
+  items.map(([nm,q,f,p]) => { const id = "g" + (n++);
+    return `<label class="item${p?" pantry":""}" for="${id}" data-pantry="${p?1:0}"><input type="checkbox" id="${id}"><span><span class="nm">${esc(nm)}</span><span class="for">${esc(f)}</span></span><span class="q">${esc(q)}</span></label>`;
+  }).join("") + "</div>").join("");
+
+const boxes = [...document.querySelectorAll("#list input")];
+function refresh(){
+  boxes.forEach(b => { b.checked = !!checked[b.id]; b.closest("label").classList.toggle("got", b.checked); });
+  document.querySelectorAll('[data-aisle="Pantry staples"]').forEach(a => a.hidden = hidePantry);
+  $("hidePantry").textContent = hidePantry ? "Show pantry items" : "Hide pantry items";
+  const active = boxes.filter(b => !(hidePantry && b.closest("label").dataset.pantry === "1"));
+  const got = active.filter(b => b.checked).length;
+  $("count").textContent = `${got} of ${active.length} items in the cart`;
+  $("bar").style.width = (active.length ? got/active.length*100 : 0) + "%";
+}
+boxes.forEach(b => b.addEventListener("change", () => { checked[b.id] = b.checked; save(); refresh(); }));
+$("hidePantry").onclick = () => { hidePantry = !hidePantry; save(); refresh(); };
+$("resetBtn").onclick = () => { checked = {}; save(); refresh(); flash("All items unchecked"); };
+
+function flash(msg){ const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(flash.h); flash.h = setTimeout(()=>t.hidden=true, 2500); }
+$("copyBtn").onclick = () => {
+  let i = 0; const lines = [];
+  LIST.forEach(([aisle, items]) => {
+    const left = items.filter(() => { const b = boxes[i++]; return !b.checked; });
+    if (!left.length || (hidePantry && aisle === "Pantry staples")) return;
+    lines.push(aisle.toUpperCase(), ...left.map(([nm,q]) => `- ${nm}${q ? " (" + q + ")" : ""}`), "");
+  });
+  const text = lines.join("\n").trim() || "Everything is checked off.";
+  const fb = $("fallback");
+  const fallback = () => { fb.value = text; fb.hidden = false; fb.focus(); fb.select(); flash("Select all and copy the text below"); };
+  try { navigator.clipboard.writeText(text).then(() => { fb.hidden = true; flash("Copied. Paste it into your Stop & Shop list."); }, fallback); } catch(e) { fallback(); }
+};
+refresh();
+</script>
+</body>
+</html>

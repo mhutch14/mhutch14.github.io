@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mark's Pages</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;500;600&display=swap">
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7f2;--surface:#fff;--fg:#1d2a21;--muted:#5d6b61;--line:#dfe4da;--accent:#2f6b3c;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root{--bg:#141a16;--surface:#1c241f;--fg:#e6ece6;--muted:#9db0a2;--line:#2e3a32;--accent:#7cc48a;color-scheme:dark}}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding:40px max(16px,env(safe-area-inset-right,0px)) 60px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:720px;margin:0 auto}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,6vw,44px);margin:0 0 4px;letter-spacing:-.02em}
+p.sub{color:var(--muted);margin:0 0 28px}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+a.card{display:block;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+a.card:hover,a.card:focus-visible{border-color:var(--accent);outline:none}
+a.card b{font-family:var(--display);font-size:18px;color:var(--accent)}
+a.card span{display:block;color:var(--muted);font-size:14px}
+a.card time{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Mark's Pages</h1>
+  <p class="sub">Tools and plans I use day to day. Newest first.</p>
+  <ul>
+    <!-- Add new pages at the top of this list -->
+    <li><a class="card" href="meal-plan.html"><b>Quick Week Meal Plan</b><span>Healthy breakfast, lunch and dinner for the week, with a grocery checklist.</span><time datetime="2026-11-24">Nov 24, 2026</time></a></li>
+  </ul>
+</div>
+</body>
+</html>
