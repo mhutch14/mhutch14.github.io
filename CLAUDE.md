@@ -2,7 +2,7 @@
 
 GitHub Pages site served from the `master` branch at https://mhutch14.github.io.
 
-- The root files (index.html, about.html, css/, img/, ...) are an older 2017 power-electronics site. Leave them alone unless asked.
+- The root `index.html` only redirects to `pages/`. Don't add other files at the root.
 - Personal HTML pages (meal plans, trackers, tools) go in `pages/`, served at https://mhutch14.github.io/pages/.
 
 ## Adding a page to `pages/`
