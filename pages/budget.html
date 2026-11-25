@@ -75,6 +75,13 @@
 .x:hover{color:var(--bad)}
 .foot-actions{display:flex;gap:8px;padding:10px 16px;flex-wrap:wrap}
 #sync{margin-top:12px}
+.io{margin-top:16px;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.io h3{margin:0;font-size:17px;font-weight:600}
+.io p{margin:0;font-size:14px;color:var(--muted)}
+.io textarea{width:100%;min-height:140px;font:13px/1.45 ui-monospace,Menlo,monospace;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.io .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.io .msg{font-size:13px}
+.io .msg.ok{color:var(--good)} .io .msg.err{color:var(--bad)}
 </style>
 </head>
 <body>
@@ -120,9 +127,21 @@
   <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
     <button class="btn" id="editBtn" type="button">Edit bills &amp; categories</button>
     <button class="btn" id="resetMonth" type="button">Clear this month</button>
+    <button class="btn" id="ioBtn" type="button" aria-expanded="false" aria-controls="io">Import or back up</button>
     <span class="note" id="confirmMsg" hidden style="margin:0;align-self:center"></span>
   </div>
 </main>
+
+<section class="panel io page" id="io" hidden style="--maxw:1100px">
+  <h3>Import a budget file</h3>
+  <p>Choose a budget file (.json) or paste its contents. This replaces your bills, categories and pay, and keeps any month you don't import.</p>
+  <div class="row"><input type="file" id="ioFile" accept=".json,application/json" aria-label="Budget file"></div>
+  <textarea id="ioText" placeholder='{"income": ..., "bills": [...], "cats": [...]}' aria-label="Budget file contents"></textarea>
+  <div class="row"><button class="btn primary" id="ioImport" type="button">Import</button><span class="msg" id="ioMsg" role="status"></span></div>
+  <h3 style="margin-top:8px">Back up</h3>
+  <p>Copy your whole budget as text, so you can save it somewhere safe or move it to another browser.</p>
+  <div class="row"><button class="btn" id="ioExport" type="button">Copy my budget</button><span class="msg" id="ioExportMsg" role="status"></span></div>
+</section>
 
 <footer class="site-foot" style="--maxw:1100px"><span>Mark Hutchinson</span><span><a href="/">Home</a> · <a href="/pages/">Life</a></span></footer>
 
@@ -285,6 +304,42 @@ $("income").addEventListener("blur", () => render());
 $("editBtn").onclick = () => { editing = !editing; $("editBtn").textContent = editing ? "Done editing" : "Edit bills & categories"; render(); };
 $("prev").onclick = () => { cur.m--; if (cur.m < 0) { cur.m = 11; cur.y--; } render(); };
 $("next").onclick = () => { cur.m++; if (cur.m > 11) { cur.m = 0; cur.y++; } render(); };
+// ---- import / back up
+$("ioBtn").onclick = () => { const io = $("io"); io.hidden = !io.hidden; $("ioBtn").setAttribute("aria-expanded", String(!io.hidden)); if (!io.hidden) io.scrollIntoView({ behavior: "smooth", block: "start" }); };
+$("ioFile").onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { $("ioText").value = r.result; ioMsg("File loaded. Tap Import to use it.", "ok"); }; r.readAsText(f); };
+function ioMsg(t, k) { const m = $("ioMsg"); m.textContent = t; m.className = "msg " + (k || ""); }
+function cleanImport(d) {
+  if (!d || typeof d !== "object") throw new Error("That isn't a budget file.");
+  if (!Array.isArray(d.bills) || !Array.isArray(d.cats)) throw new Error("The file needs a list of bills and a list of categories.");
+  const bills = d.bills.map(b => ({ id: String(b.id || uid()), name: String(b.name || "Bill").slice(0, 60), amount: num(b.amount), day: Math.max(1, Math.min(31, Math.round(num(b.day)) || 1)) }));
+  const cats = d.cats.map(c => ({ id: String(c.id || uid()), name: String(c.name || "Category").slice(0, 60), planned: num(c.planned) }));
+  const months = {};
+  for (const [k, m] of Object.entries(d.months || {})) {
+    if (!/^\d{4}-\d{2}$/.test(k) || !m || typeof m !== "object") continue;
+    const spent = {}, paid = {};
+    for (const [id, v] of Object.entries(m.spent || {})) spent[id] = num(v);
+    for (const [id, v] of Object.entries(m.paid || {})) if (v) paid[id] = true;
+    months[k] = { spent, paid }; if (m.income != null) months[k].income = num(m.income);
+  }
+  return { income: num(d.income), bills, cats, months };
+}
+let ioArmed = false;
+$("ioImport").onclick = () => {
+  let d; try { d = cleanImport(JSON.parse($("ioText").value)); } catch (e) { ioMsg(e instanceof SyntaxError ? "That text isn't a valid budget file. Check you copied all of it." : e.message, "err"); return; }
+  if (!ioArmed && !state.example) { ioArmed = true; $("ioImport").textContent = "Yes, replace my budget"; ioMsg(`This replaces your current ${state.bills.length} bills and ${state.cats.length} categories. Tap again to confirm.`, "err");
+    setTimeout(() => { ioArmed = false; $("ioImport").textContent = "Import"; }, 6000); return; }
+  ioArmed = false; $("ioImport").textContent = "Import";
+  state = { example: false, income: d.income, bills: d.bills, cats: d.cats, months: Object.assign({}, state.example ? {} : state.months, d.months) };
+  persist(); render(); $("ioText").value = ""; $("ioFile").value = "";
+  ioMsg(`Imported ${d.bills.length} bills and ${d.cats.length} categories.`, "ok");
+};
+$("ioExport").onclick = () => {
+  const t = JSON.stringify({ income: state.income, bills: state.bills, cats: state.cats, months: state.months }, null, 2);
+  const m = $("ioExportMsg");
+  const fallback = () => { $("ioText").value = t; $("ioText").select(); m.textContent = "Select the text above and copy it."; m.className = "msg"; };
+  try { navigator.clipboard.writeText(t).then(() => { m.textContent = "Copied."; m.className = "msg ok"; }, fallback); } catch (e) { fallback(); }
+};
+
 let armed = false;
 $("resetMonth").onclick = () => {
   const msg = $("confirmMsg");
