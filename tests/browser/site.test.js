@@ -15,7 +15,7 @@ for (const path of PAGES) {
     const page = await openPage(browser, server.url);
     await page.goto(server.url + path);
     assert.ok((await page.title()).length > 0, "page has a <title>");
-    assert.equal(await page.locator(".site-nav .brand").innerText(), "Mark Hutchinson");
+    assert.equal(await page.locator(".site-nav .brand").innerText(), "Odds & Ends");
     assert.equal(await page.locator('.site-nav [aria-current="page"]').innerText(), SECTION[path]);
     assert.equal(await page.locator("footer.site-foot").count(), 1);
     assert.equal(await page.locator("h1").count(), 1, "exactly one main heading");
@@ -33,6 +33,17 @@ for (const path of PAGES) {
     await page.context().close();
   });
 }
+
+test("home leads with the site name and tools; the resume keeps Mark's name", async () => {
+  const page = await openPage(browser, server.url);
+  await page.goto(server.url + "/");
+  assert.equal(await page.locator("h1").innerText(), "Odds & Ends");
+  assert.deepEqual(await page.locator(".tools a.card b").allInnerTexts(), ["Ledger", "Mise"]);
+  assert.ok(await page.locator('.about a[href="/resume/"]').count(), "about section links to the resume");
+  await page.goto(server.url + "/resume/");
+  assert.equal(await page.locator("h1").innerText(), "Mark Hutchinson");
+  await page.context().close();
+});
 
 test("every internal link on every page points to a page that exists", async () => {
   const page = await openPage(browser, server.url);

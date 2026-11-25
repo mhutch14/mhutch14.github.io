@@ -1,6 +1,6 @@
 # mhutch14.github.io
 
-Mark Hutchinson's personal website: an online **resume** plus a set of **life tools** for day-to-day planning, like a weekly meal plan with a grocery checklist and a monthly budget. Tool data can sync between phone and laptop.
+**Odds & Ends**, Mark Hutchinson's personal website: a set of **life tools** for day-to-day planning, like a monthly budget (**Ledger**) and a weekly meal plan with a grocery checklist (**Mise**), plus an online **resume**. Tool data can sync between phone and laptop.
 
 **Live site: https://mhutch14.github.io**
 
@@ -9,15 +9,15 @@ Mark Hutchinson's personal website: an online **resume** plus a set of **life to
 | Home | https://mhutch14.github.io/ |
 | Resume | https://mhutch14.github.io/resume/ |
 | Life tools | https://mhutch14.github.io/pages/ |
-| Monthly Budget | https://mhutch14.github.io/pages/budget.html |
-| Quick Week Meal Plan | https://mhutch14.github.io/pages/meal-plan.html |
+| Ledger (monthly budget) | https://mhutch14.github.io/pages/budget.html |
+| Mise (weekly meal plan) | https://mhutch14.github.io/pages/meal-plan.html |
 
 ---
 
 ## How to use the site
 
 ### Everywhere
-- **Menu:** Home, Resume and Life are at the top of every page.
+- **Menu:** Home, Life and Resume are at the top of every page.
 - **Light / dark:** the round button at the end of the menu cycles **Auto** (follows your device), **Light** and **Dark**. Each browser remembers your choice.
 - **Syncing between devices:** the meal plan and the budget each have a **"Sign in to sync"** box. Enter your email, open the link Supabase emails you *on the same device*, and that browser stays signed in. Changes then save to your account and show up on your other signed-in devices when you open or switch back to the page. Signed out or offline, each page still works and saves to that device only.
 - **Seeing an old version?** Browsers can keep a page for up to 10 minutes. Force a refresh with **Ctrl+Shift+R** (**Cmd+Shift+R** on a Mac), or open the page in a new tab on a phone.
@@ -26,7 +26,7 @@ Mark Hutchinson's personal website: an online **resume** plus a set of **life to
 - Shows experience, education, skills and contact links (email, GitHub, LinkedIn).
 - **Print or save as PDF** opens your browser's print dialog with a clean, print-friendly layout.
 
-### Monthly Budget
+### Ledger (monthly budget)
 - **Month:** use the ← and → arrows to move between months. Each month keeps its own paid bills and spending.
 - **Take-home pay:** tap the number to change it. That also becomes the default for new months.
 - **Bills:** check a bill off when it's paid, and it moves into the **Paid** group (tap it to show or hide). Each bill shows *Due in N days*, *Due today* or *N days late*. Tap the **Bills** heading to collapse the whole list.
@@ -49,7 +49,7 @@ Budget file format (also see [`pages/budget-core.js`](pages/budget-core.js)):
 }
 ```
 
-### Quick Week Meal Plan
+### Mise (weekly meal plan)
 - A week of quick, healthy meals: grab-and-go breakfasts and lunches, and dinners of 30 minutes or less, plus a Sunday prep plan and recipes (tap a meal to open it).
 - **Grocery list:** check items off as you shop, and the progress bar fills. **Hide pantry items** hides staples you probably already have. **Copy what's left** copies the unchecked items by aisle, ready to paste into a shopping app. **Uncheck all** starts over.
 
@@ -67,6 +67,8 @@ Browser ──(HTML/CSS/JS)── GitHub Pages (this repo, public)
 ```
 
 ### Look and feel
+The site is called **Odds & Ends**: the home page leads with the tools, and the resume is one section of the site. Each tool has a short name (Ledger, Mise) with a plain description next to it.
+
 Modeled on modern product sites like apple.com: light gray and white (true black in dark mode), near-black text, one blue used only for clickable things, the device's system font (San Francisco on Apple devices, with Inter as the fallback), pill-shaped buttons and borderless rounded cards. Every color is a CSS variable ("token") in `assets/site.css`, defined once for light and once for dark, so pages never hard-code colors.
 
 ### Data and privacy
@@ -86,7 +88,7 @@ Modeled on modern product sites like apple.com: light gray and white (true black
 ## Files
 
 ```
-index.html                  Home page: intro, work snapshot, links to life tools
+index.html                  Home page: site name, tool cards, short About with resume link
 resume/index.html           Resume, with print / save-as-PDF
 pages/index.html            Life tools hub: one card per tool
 pages/budget.html           Monthly budget page (UI and events)
@@ -140,8 +142,9 @@ npm run test:all
 
 What's covered:
 - **Unit tests (17):** number parsing, money formatting, due-date status (late, today, soon, later, short months), totals, progress bars, adding purchases without rounding drift, and import checking (valid files, bad files, trimming, clamping).
-- **Browser tests (38):**
+- **Browser tests (39):**
   - Every page loads with no errors and has the shared nav and footer.
+  - The home page leads with "Odds & Ends" and the tools; the resume keeps Mark's name as its heading.
   - Every page fits a phone screen in dark mode.
   - Every internal link works.
   - The theme switch cycles and is remembered.
@@ -159,7 +162,7 @@ Commit and push to `master`. GitHub Pages rebuilds in about a minute. Check prog
 1. Copy the structure of an existing tool page into `pages/<name>.html`: the head links to `site.css` and `theme.js`, then the shared nav and footer. See "Every page" in `CLAUDE.md`.
 2. Start it with clearly labeled example data.
 3. To sync it, load `vendor/supabase-2.119.0.js` and `sync.js`, then call `PageSync.init({ page: "<name>", mount, initial, onData })` and `PageSync.save(state)` on every change.
-4. Add a card to `pages/index.html` and to the Life list on `index.html`.
+4. Give it a short name, and add a card to `pages/index.html` and to the Tools grid on `index.html`.
 5. Put any logic worth testing in a separate `*-core.js` file like `budget-core.js`, and add tests.
 
 ### Supabase setup (already done; for reference)

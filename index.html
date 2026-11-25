@@ -1,82 +1,83 @@
 <!doctype html>
 <html lang="en">
 <!--
-  Home page (https://mhutch14.github.io/).
-  Intro, a short work history and links into the Life tools. Uses the shared theme
-  (/assets/site.css) and light/dark switch (/assets/theme.js). No data is stored here.
+  Home page (https://mhutch14.github.io/), "Odds & Ends".
+  Tools come first (one card per tool, same order as /pages/), then a short About section
+  that links to the resume. Uses the shared theme (/assets/site.css) and light/dark switch
+  (/assets/theme.js). No data is stored here.
 -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mark Hutchinson</title>
-<meta name="description" content="Mark Hutchinson, embedded software engineer. Resume and everyday tools.">
+<title>Odds &amp; Ends</title>
+<meta name="description" content="Odds & Ends: everyday tools for money, meals and more, by Mark Hutchinson.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/assets/site.css?v=4">
 <script src="/assets/theme.js?v=1"></script>
 <style>
 .page{--maxw:980px}
-.hero{padding-block:24px 36px;border-bottom:0;margin-bottom:32px}
-.hero h1{font-size:clamp(40px,8vw,72px)}
-.hero .role{font-family:var(--display);font-weight:600;font-size:clamp(18px,2.6vw,24px);color:var(--muted);margin:10px 0 0}
-.hero .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
-.hero .actions .btn{font-size:14px;padding:9px 16px}
-.facts{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
-@media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.hero{padding-block:16px 8px;margin-bottom:28px}
 .section-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
-.section-head a{font-size:13px;font-weight:600;text-decoration:none}
-.snap{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
-.snap .job b{display:block;font-weight:600}
-.snap .job span{color:var(--muted);font-size:14px}
-.snap .job time{font-family:var(--mono);font-size:12px;color:var(--tomato)}
+.section-head a{font-size:14px;font-weight:500}
+.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:700px){.tools{grid-template-columns:minmax(0,1fr)}}
+.tools a.card{height:100%;padding:24px;grid-template-rows:auto auto 1fr}
+.tools a.card b{font-size:24px}
+.tools a.card .kind{grid-column:1;color:var(--fg);font-weight:500;font-size:15px}
+.tools a.card .tags{align-self:end;margin-top:14px}
+.tools a.card .go{grid-row:1}
+.about{margin-top:48px;padding:24px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.about p{margin:4px 0 0;color:var(--muted);max-width:52ch}
+.about .actions{display:flex;gap:10px;flex-wrap:wrap}
 </style>
 </head>
 <body>
 <nav class="site-nav" style="--maxw:980px" aria-label="Site">
-  <a class="brand" href="/">Mark <span>Hutchinson</span></a>
-  <div class="links"><a href="/" aria-current="page">Home</a><a href="/resume/">Resume</a><a href="/pages/">Life</a></div>
+  <a class="brand" href="/">Odds &amp; Ends</a>
+  <div class="links"><a href="/" aria-current="page">Home</a><a href="/pages/">Life</a><a href="/resume/">Resume</a></div>
 </nav>
 
 <main class="page">
   <section class="hero">
-    <div class="eyebrow">Groton, Connecticut</div>
-    <h1>Mark <span>Hutchinson</span></h1>
-    <p class="role">Software engineering leader delivering safety-critical submarine software.</p>
-    <div class="facts">
-      <span class="tag">Computer Engineering, Miami University</span>
-      <span class="tag">Software engineer since 2018</span>
-      <span class="tag">Ada · Linux · Git</span>
+    <div class="eyebrow">Everyday tools</div>
+    <h1>Odds &amp; Ends</h1>
+    <p class="sub">Small tools for running the week: money, meals and whatever comes next. They save on your device, and sync between phone and laptop when you sign in.</p>
+  </section>
+
+  <section aria-labelledby="tools-h">
+    <div class="section-head"><h2 id="tools-h">Tools</h2><a href="/pages/">All tools &rarr;</a></div>
+    <ul class="cards tools">
+      <li><a class="card" href="/pages/budget.html">
+        <b>Ledger</b>
+        <span class="kind">Monthly budget</span>
+        <span class="desc">Bills with due dates you check off, and spending by category.</span>
+        <span class="tags"><span class="tag">Money</span><span class="tag">Syncs</span></span>
+        <span class="go" aria-hidden="true">&rarr;</span>
+      </a></li>
+      <li><a class="card" href="/pages/meal-plan.html">
+        <b>Mise</b>
+        <span class="kind">Weekly meal plan</span>
+        <span class="desc">A week of quick, healthy meals and a grocery checklist.</span>
+        <span class="tags"><span class="tag">Food</span><span class="tag">Syncs</span></span>
+        <span class="go" aria-hidden="true">&rarr;</span>
+      </a></li>
+    </ul>
+  </section>
+
+  <section class="panel about" aria-labelledby="about-h">
+    <div>
+      <h2 id="about-h">About</h2>
+      <p>Made by Mark Hutchinson, a software engineering supervisor at General Dynamics Electric Boat in Groton, Connecticut.</p>
     </div>
     <div class="actions">
-      <a class="btn primary" href="/resume/">View resume</a>
+      <a class="btn primary" href="/resume/">Resume</a>
       <a class="btn" href="https://www.linkedin.com/in/mark-hutchinson-085267a5" target="_blank" rel="noopener">LinkedIn</a>
       <a class="btn" href="https://github.com/mhutch14" target="_blank" rel="noopener">GitHub</a>
     </div>
   </section>
-
-  <div class="grid">
-    <section>
-      <div class="section-head"><h2>Work</h2><a href="/resume/">Full resume &rarr;</a></div>
-      <div class="panel snap">
-        <div class="job"><time>2026 – now</time><b>Simulation Software Supervisor</b><span>General Dynamics Electric Boat · Supervises 12 engineers on submarine simulation software</span></div>
-        <div class="job"><time>2024 – 2026</time><b>Columbia Class Software Supervisor</b><span>General Dynamics Electric Boat · Supervised 23 engineers on ship control software</span></div>
-        <div class="job"><time>2020 – 2024</time><b>Remote Interface Controller Project Lead</b><span>General Dynamics Electric Boat · Engineer, then lead of a 10-person team</span></div>
-        <div class="job"><time>2018 – 2020</time><b>Software Engineer, Support</b><span>Trew Automation · Control systems in JavaScript, Python and SQL</span></div>
-        <div class="job"><time>2014 – 2017</time><b>B.E. Computer Engineering</b><span>Miami University, Oxford, Ohio</span></div>
-      </div>
-    </section>
-
-    <section>
-      <div class="section-head"><h2>Life</h2><a href="/pages/">All tools &rarr;</a></div>
-      <ul class="cards">
-        <li><a class="card" href="/pages/budget.html"><b>Monthly Budget</b><span class="desc">Bills, due dates and spending by category.</span><span class="go" aria-hidden="true">&rarr;</span></a></li>
-        <li><a class="card" href="/pages/meal-plan.html"><b>Quick Week Meal Plan</b><span class="desc">A week of healthy meals and a grocery checklist.</span><span class="go" aria-hidden="true">&rarr;</span></a></li>
-      </ul>
-    </section>
-  </div>
 </main>
 
-<footer class="site-foot" style="--maxw:980px"><span>Mark Hutchinson</span><span><a href="/resume/">Resume</a> · <a href="/pages/">Life</a> · <a href="https://www.linkedin.com/in/mark-hutchinson-085267a5" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/mhutch14" target="_blank" rel="noopener">GitHub</a></span></footer>
+<footer class="site-foot" style="--maxw:980px"><span>Odds &amp; Ends · Mark Hutchinson</span><span><a href="/pages/">Life</a> · <a href="/resume/">Resume</a> · <a href="https://www.linkedin.com/in/mark-hutchinson-085267a5" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/mhutch14" target="_blank" rel="noopener">GitHub</a></span></footer>
 </body>
 </html>

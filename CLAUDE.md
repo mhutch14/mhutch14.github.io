@@ -1,12 +1,12 @@
 # mhutch14.github.io
 
-Mark's personal website, served by GitHub Pages from the `master` branch at https://mhutch14.github.io. It's two things: a resume, and day-to-day life tools.
+Mark's personal website, "Odds & Ends", served by GitHub Pages from the `master` branch at https://mhutch14.github.io. It's mainly day-to-day life tools, each with a short name (Ledger = budget, Mise = meal plan), plus a resume section. Mark's name is the heading only on the resume page; the nav brand and home heading are "Odds & Ends".
 
 ## Site map
 
 | URL | File | What it is |
 |---|---|---|
-| `/` | `index.html` | Home: intro, work snapshot, links to life tools |
+| `/` | `index.html` | Home: site name, tool cards, short About with resume link |
 | `/resume/` | `resume/index.html` | Full resume (has a print / save-as-PDF button) |
 | `/pages/` | `pages/index.html` | "Life" hub: list of tool pages |
 | `/pages/<name>.html` | `pages/<name>.html` | One life tool per file (meal plan, budget, ...) |
@@ -23,8 +23,8 @@ Keep the `/pages/` URL for life tools: Supabase sign-in redirects and bookmarks 
 2. Start the body with the shared nav, with `aria-current="page"` on the current section:
    ```html
    <nav class="site-nav" style="--maxw:1100px" aria-label="Site">
-     <a class="brand" href="/">Mark <span>Hutchinson</span></a>
-     <div class="links"><a href="/">Home</a><a href="/resume/">Resume</a><a href="/pages/" aria-current="page">Life</a></div>
+     <a class="brand" href="/">Odds &amp; Ends</a>
+     <div class="links"><a href="/">Home</a><a href="/pages/" aria-current="page">Life</a><a href="/resume/">Resume</a></div>
    </nav>
    ```
    If a new top-level section is added, add its link to the nav on every page.
@@ -35,7 +35,7 @@ Keep the `/pages/` URL for life tools: Supabase sign-in redirects and bookmarks 
 ## Adding a life tool
 
 1. Create `pages/<short-name>.html` following "Every page".
-2. Add a card at the top of the list in `pages/index.html` (title, date, one-line description, tags, arrow). Also add it to the "Life" list on the home page, `index.html`.
+2. Give it a short name (like Ledger or Mise) with a plain description beside it. Add a card at the top of the list in `pages/index.html` (name, date, one-line description, tags, arrow). Also add it to the Tools grid on the home page, `index.html`.
 3. New tools start with clearly labeled example data, never invented personal figures.
 
 ## Privacy
