@@ -1,0 +1,16 @@
+{
+  "name": "mhutch14-site",
+  "private": true,
+  "description": "Mark Hutchinson's personal site: resume and day-to-day life tools. Static HTML served by GitHub Pages.",
+  "homepage": "https://mhutch14.github.io",
+  "scripts": {
+    "test": "node --test \"tests/unit/**/*.test.js\"",
+    "test:browser": "node --test --test-concurrency=1 \"tests/browser/**/*.test.js\"",
+    "test:all": "npm test && npm run test:browser",
+    "serve": "node tests/serve.js"
+  },
+  "engines": { "node": ">=20" },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

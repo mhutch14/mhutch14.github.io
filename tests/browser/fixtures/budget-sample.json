@@ -1,0 +1,20 @@
+{
+  "income": 4000,
+  "bills": [
+    { "id": "rent", "name": "Rent", "amount": 1500, "day": 1 },
+    { "id": "net", "name": "Internet", "amount": 70, "day": 15 },
+    { "id": "phone", "name": "Phone", "amount": 125, "day": 20 }
+  ],
+  "cats": [
+    { "id": "groc", "name": "Groceries", "planned": 400 },
+    { "id": "eat", "name": "Eating out", "planned": 200 },
+    { "id": "gas", "name": "Gas", "planned": 150 },
+    { "id": "fun", "name": "Fun", "planned": 100 }
+  ],
+  "months": {
+    "2026-10": {
+      "paid": { "rent": true, "net": true, "phone": true },
+      "spent": { "groc": 320.25, "eat": 140.25, "gas": 40 }
+    }
+  }
+}

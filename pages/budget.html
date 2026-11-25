@@ -1,5 +1,14 @@
 <!doctype html>
 <html lang="en">
+<!--
+  Monthly budget (/pages/budget.html).
+  Pay, recurring bills (check off when paid; paid ones fold into a group; the list can collapse),
+  and spending by category (one add-purchase bar, compact rows that open to set a total).
+  Data: localStorage "budget-v1" on this device, synced to Supabase as page "budget" when signed in.
+  View preferences (collapsed sections): localStorage "budget-ui-v1", per device.
+  Logic (math, due dates, import checks) lives in budget-core.js and is unit-tested.
+  The page ships with example data only; real numbers come from the user's import or edits.
+-->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -33,7 +42,18 @@
 .cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:start}
 @media (max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}}
 .sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-.sec-head .meta{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.sec-head .meta{font-size:13px;color:var(--muted)}
+.sec-toggle{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;border-radius:8px}
+.sec-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.chev{width:20px;height:20px;color:var(--muted);transition:transform .2s}
+.sec-toggle[aria-expanded="false"] .chev{transform:rotate(-90deg)}
+.paid-toggle{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:14px;color:var(--muted);border-top:1px solid var(--line)}
+.paid-toggle:hover{background:var(--bg);color:var(--fg)}
+.paid-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.paid-toggle .chev{width:16px;height:16px}
+.paid-toggle[aria-expanded="false"] .chev{transform:rotate(-90deg)}
+.all-paid{padding:12px 16px;font-size:14px;color:var(--good)}
+@media (prefers-reduced-motion:reduce){.chev{transition:none}}
 
 /* bills */
 .list{padding:4px 0}
@@ -136,7 +156,7 @@
 
   <div class="cols">
     <section>
-      <div class="sec-head"><h2>Bills</h2><span class="meta" id="billsMeta"></span></div>
+      <div class="sec-head"><button class="sec-toggle" id="billsToggle" type="button" aria-expanded="true" aria-controls="bills"><h2>Bills</h2><svg class="chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="meta" id="billsMeta"></span></div>
       <div class="panel list" id="bills"></div>
     </section>
     <section>
@@ -175,43 +195,27 @@
 
 <script src="vendor/supabase-2.119.0.js"></script>
 <script src="sync.js?v=5"></script>
+<script src="budget-core.js?v=1"></script>
 <script>
-const KEY = "budget-v1";
-const uid = () => Math.random().toString(36).slice(2, 9);
-const EXAMPLE = () => ({
-  example: true,
-  income: 4200,
-  bills: [
-    { id: uid(), name: "Rent", amount: 1450, day: 1 },
-    { id: uid(), name: "Car payment", amount: 320, day: 5 },
-    { id: uid(), name: "Car insurance", amount: 115, day: 12 },
-    { id: uid(), name: "Electric", amount: 90, day: 18 },
-    { id: uid(), name: "Internet", amount: 65, day: 20 },
-    { id: uid(), name: "Phone", amount: 55, day: 22 },
-    { id: uid(), name: "Streaming", amount: 28, day: 26 },
-  ],
-  cats: [
-    { id: uid(), name: "Groceries", planned: 400 },
-    { id: uid(), name: "Gas", planned: 160 },
-    { id: uid(), name: "Eating out", planned: 200 },
-    { id: uid(), name: "Fun & misc", planned: 150 },
-  ],
-  months: {},
-});
+// Logic lives in budget-core.js (unit-tested); this script handles the page itself.
+const { num, money, esc, monthKey, daysInMonth, billStatus, sortedBills, summarize, percentUsed, addSpend, cleanImport, newId: uid, exampleBudget } = BudgetCore;
+const KEY = "budget-v1";            // localStorage key for the budget data
+const UI_KEY = "budget-ui-v1";      // localStorage key for view preferences (collapsed sections)
+const EXAMPLE = () => exampleBudget(uid);
 
 let state; try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
 if (!state || !Array.isArray(state.bills)) state = EXAMPLE();
 let editing = false, openCat = null, lastCat = null;
+let ui = { billsOpen: true, showPaid: false };
+try { Object.assign(ui, JSON.parse(localStorage.getItem(UI_KEY)) || {}); } catch (e) {}
+const saveUi = () => { try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {} };
 const now = new Date();
 let cur = { y: now.getFullYear(), m: now.getMonth() };
 
 const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const money = n => (n < 0 ? "−$" : "$") + Math.abs(Math.round(n * 100) / 100).toLocaleString("en-US", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
-const num = v => { const n = parseFloat(String(v).replace(/[$,\s]/g, "")); return isFinite(n) ? n : 0; };
-const mkey = () => `${cur.y}-${String(cur.m + 1).padStart(2, "0")}`;
+const CHEV_SM = '<svg class="chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const mkey = () => monthKey(cur.y, cur.m);
 const month = () => (state.months[mkey()] ||= { paid: {}, spent: {} });
-const daysIn = () => new Date(cur.y, cur.m + 1, 0).getDate();
 
 function persist() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
@@ -219,32 +223,14 @@ function persist() {
 }
 function changed() { if (state.example) { state.example = false; } persist(); render(); }
 
-function billStatus(b, paid) {
-  if (paid) return ["paid", "Paid"];
-  const day = Math.min(b.day || 1, daysIn());
-  const due = new Date(cur.y, cur.m, day);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diff = Math.round((due - today) / 864e5);
-  if (diff < 0) return ["late", diff === -1 ? "1 day late" : `${-diff} days late`];
-  if (diff === 0) return ["soon", "Due today"];
-  if (diff <= 7) return ["soon", `Due in ${diff} day${diff > 1 ? "s" : ""}`];
-  return ["later", `Due ${due.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`];
-}
-
 function render() {
   const mo = month();
   $("monthName").textContent = new Date(cur.y, cur.m, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
   $("exampleNote").hidden = !state.example;
   if (document.activeElement !== $("income")) $("income").value = money(mo.income ?? state.income);
 
-  const bills = [...state.bills].sort((a, b) => (a.day || 0) - (b.day || 0));
-  const billTotal = bills.reduce((s, b) => s + num(b.amount), 0);
-  const paidTotal = bills.filter(b => mo.paid[b.id]).reduce((s, b) => s + num(b.amount), 0);
-  const paidCount = bills.filter(b => mo.paid[b.id]).length;
-  const spent = state.cats.reduce((s, c) => s + num(mo.spent[c.id] || 0), 0);
-  const planned = state.cats.reduce((s, c) => s + num(c.planned), 0);
-  const income = num(mo.income ?? state.income);
-  const left = income - billTotal - spent;
+  const bills = sortedBills(state.bills);
+  const { billTotal, paidTotal, paidCount, spent, planned, left } = summarize(state, mo);
 
   $("tBills").textContent = money(billTotal);
   $("tBillsS").textContent = `${money(paidTotal)} paid so far`;
@@ -253,16 +239,25 @@ function render() {
   $("tLeft").textContent = money(left);
   $("leftTile").classList.toggle("neg", left < 0);
   $("billsMeta").textContent = `${paidCount} of ${bills.length} paid`;
-  $("catsMeta").textContent = `${money(Math.max(planned - spent, 0))} left to spend`;
+  $("catsMeta").textContent = `${money(summarize(state, mo).leftToSpend)} left to spend`;
 
   if (editing) return renderEdit();
 
-  $("bills").innerHTML = bills.length ? bills.map(b => {
-    const p = !!mo.paid[b.id]; const [cls, label] = billStatus(b, p);
+  // Bills: unpaid first; paid ones fold into a "Paid" group. The whole list can collapse.
+  $("billsToggle").setAttribute("aria-expanded", String(ui.billsOpen));
+  $("bills").hidden = !ui.billsOpen;
+  const today = new Date();
+  const billRow = b => {
+    const p = !!mo.paid[b.id]; const [cls, label] = billStatus(b, p, cur.y, cur.m, today);
     return `<label class="bill${p ? " paid" : ""}" for="b-${b.id}"><input type="checkbox" id="b-${b.id}" data-bill="${b.id}"${p ? " checked" : ""}>
       <span><span class="name">${esc(b.name)}</span><span class="due"> · day ${b.day}</span></span>
       <span class="pill ${cls}">${label}</span><span class="amt">${money(num(b.amount))}</span></label>`;
-  }).join("") : `<p class="note" style="padding:12px 16px">No bills yet. Tap "Edit bills &amp; categories" to add one.</p>`;
+  };
+  const unpaid = bills.filter(b => !mo.paid[b.id]), paidList = bills.filter(b => mo.paid[b.id]);
+  $("bills").innerHTML = !bills.length ? `<p class="note" style="padding:12px 16px">No bills yet. Tap "Edit bills &amp; categories" to add one.</p>` :
+    (unpaid.length ? unpaid.map(billRow).join("") : `<p class="all-paid">All bills paid for this month.</p>`) +
+    (paidList.length ? `<button class="paid-toggle" id="paidToggle" type="button" aria-expanded="${ui.showPaid}">${CHEV_SM}Paid (${paidList.length}) · ${money(paidTotal)}</button>` +
+      (ui.showPaid ? paidList.map(billRow).join("") : "") : "");
 
   $("quick").hidden = false;
   const qs = $("qCat"), keep = qs.value || lastCat;
@@ -271,7 +266,7 @@ function render() {
 
   $("cats").innerHTML = state.cats.length ? state.cats.map(c => {
     const s = num(mo.spent[c.id] || 0), pl = num(c.planned), over = s > pl, open = openCat === c.id;
-    const pct = pl ? Math.min(100, s / pl * 100) : (s ? 100 : 0);
+    const pct = percentUsed(s, pl);
     return `<div class="cat${over ? " over" : ""}">
       <button class="crow" type="button" data-open="${c.id}" aria-expanded="${open}">
         <span class="nm">${esc(c.name)}</span><span class="bar" aria-hidden="true"><i style="width:${pct}%"></i></span>
@@ -283,6 +278,7 @@ function render() {
 }
 
 function renderEdit() {
+  $("bills").hidden = false;
   $("quick").hidden = true;
   $("bills").innerHTML = `<div class="edit-row b edit-head"><span>Bill</span><span>Amount</span><span>Due day</span><span></span></div>` +
     state.bills.map(b => `<div class="edit-row b" data-id="${b.id}">
@@ -319,7 +315,7 @@ document.addEventListener("submit", e => {
 $("quick").addEventListener("submit", e => {
   e.preventDefault();
   const v = num($("qAmt").value), id = $("qCat").value; if (!v || !id) { $("qAmt").focus(); return; }
-  const mo = month(); mo.spent[id] = Math.round((num(mo.spent[id] || 0) + v) * 100) / 100;
+  addSpend(month(), id, v);
   lastCat = id; $("qAmt").value = "";
   const c = state.cats.find(x => x.id === id), d = $("qDone");
   d.textContent = `Added ${money(v)} to ${c ? c.name : "category"}.`; d.hidden = false; clearTimeout(d._t); d._t = setTimeout(() => d.hidden = true, 2500);
@@ -327,6 +323,8 @@ $("quick").addEventListener("submit", e => {
 });
 document.addEventListener("click", e => {
   const t = e.target;
+  if (t.closest("#billsToggle")) { ui.billsOpen = !ui.billsOpen; saveUi(); render(); return; }
+  if (t.closest("#paidToggle")) { ui.showPaid = !ui.showPaid; saveUi(); render(); $("paidToggle") && $("paidToggle").focus(); return; }
   const row = t.closest("[data-open]");
   if (row) { openCat = openCat === row.dataset.open ? null : row.dataset.open; render(); const b = document.querySelector(`[data-open="${row.dataset.open}"]`); b && b.focus(); }
   if (t.dataset.del) {
@@ -350,24 +348,9 @@ $("next").onclick = () => { cur.m++; if (cur.m > 11) { cur.m = 0; cur.y++; } ren
 $("ioBtn").onclick = () => { const io = $("io"); io.hidden = !io.hidden; $("ioBtn").setAttribute("aria-expanded", String(!io.hidden)); if (!io.hidden) io.scrollIntoView({ behavior: "smooth", block: "start" }); };
 $("ioFile").onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { $("ioText").value = r.result; ioMsg("File loaded. Tap Import to use it.", "ok"); }; r.readAsText(f); };
 function ioMsg(t, k) { const m = $("ioMsg"); m.textContent = t; m.className = "msg " + (k || ""); }
-function cleanImport(d) {
-  if (!d || typeof d !== "object") throw new Error("That isn't a budget file.");
-  if (!Array.isArray(d.bills) || !Array.isArray(d.cats)) throw new Error("The file needs a list of bills and a list of categories.");
-  const bills = d.bills.map(b => ({ id: String(b.id || uid()), name: String(b.name || "Bill").slice(0, 60), amount: num(b.amount), day: Math.max(1, Math.min(31, Math.round(num(b.day)) || 1)) }));
-  const cats = d.cats.map(c => ({ id: String(c.id || uid()), name: String(c.name || "Category").slice(0, 60), planned: num(c.planned) }));
-  const months = {};
-  for (const [k, m] of Object.entries(d.months || {})) {
-    if (!/^\d{4}-\d{2}$/.test(k) || !m || typeof m !== "object") continue;
-    const spent = {}, paid = {};
-    for (const [id, v] of Object.entries(m.spent || {})) spent[id] = num(v);
-    for (const [id, v] of Object.entries(m.paid || {})) if (v) paid[id] = true;
-    months[k] = { spent, paid }; if (m.income != null) months[k].income = num(m.income);
-  }
-  return { income: num(d.income), bills, cats, months };
-}
 let ioArmed = false;
 $("ioImport").onclick = () => {
-  let d; try { d = cleanImport(JSON.parse($("ioText").value)); } catch (e) { ioMsg(e instanceof SyntaxError ? "That text isn't a valid budget file. Check you copied all of it." : e.message, "err"); return; }
+  let d; try { d = cleanImport(JSON.parse($("ioText").value), uid); } catch (e) { ioMsg(e instanceof SyntaxError ? "That text isn't a valid budget file. Check you copied all of it." : e.message, "err"); return; }
   if (!ioArmed && !state.example) { ioArmed = true; $("ioImport").textContent = "Yes, replace my budget"; ioMsg(`This replaces your current ${state.bills.length} bills and ${state.cats.length} categories. Tap again to confirm.`, "err");
     setTimeout(() => { ioArmed = false; $("ioImport").textContent = "Import"; }, 6000); return; }
   ioArmed = false; $("ioImport").textContent = "Import";

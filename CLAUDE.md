@@ -11,6 +11,9 @@ Mark's personal website, served by GitHub Pages from the `master` branch at http
 | `/pages/` | `pages/index.html` | "Life" hub: list of tool pages |
 | `/pages/<name>.html` | `pages/<name>.html` | One life tool per file (meal plan, budget, ...) |
 
+README.md has the full file list, how-to-use guide and design notes. Keep it current when you add or change pages.
+
+Logic worth testing goes in a DOM-free `pages/<name>-core.js` (see `pages/budget-core.js`), loaded by the page and required by unit tests.
 Shared files: `assets/site.css` (theme tokens, nav, cards, buttons), `assets/theme.js` (light/dark switch), `pages/sync.js` + `pages/vendor/` (Supabase sync), `supabase/setup.sql`.
 Keep the `/pages/` URL for life tools: Supabase sign-in redirects and bookmarks point there.
 
@@ -53,6 +56,13 @@ Pages can sync their state through Supabase with the shared helper `pages/sync.j
   PageSync.save(state); // on every change
   ```
   Keep localStorage as the offline copy, so the page still works without sign-in or offline. `pages/meal-plan.html` and `pages/budget.html` are working examples.
+
+## Tests
+
+- `npm test`: unit tests in `tests/unit/` (Node's built-in runner, no install).
+- `npm run test:browser`: Playwright tests in `tests/browser/` (every page, theme, budget, meal plan, sync with a fake Supabase). Needs `npm install` and `npx playwright install chromium`, or set `CHROMIUM_PATH`.
+- Run both before pushing, and add tests for new behavior. Test data must be fake (`tests/browser/fixtures/`), never the user's real figures.
+- `_config.yml` keeps tests, notes and setup files off the live site; add new non-site files to its `exclude` list.
 
 ## Publishing
 

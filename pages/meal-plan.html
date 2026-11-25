@@ -1,5 +1,12 @@
 <!doctype html>
 <html lang="en">
+<!--
+  Quick week meal plan (/pages/meal-plan.html).
+  Weekly table, Sunday prep, recipes and a grocery checklist sorted by aisle.
+  All content is in the WEEK, PREP, RECIPES and LIST constants in the script below.
+  Checkmarks: localStorage "quickweek-checked-v1" (+ "quickweek-hidepantry"),
+  synced to Supabase as page "meal-plan" when signed in.
+-->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -150,6 +157,8 @@ label.item.pantry .nm::after{content:"check pantry";margin-left:6px;font-size:13
     <div class="listbody" id="list"></div>
   </aside>
 </div>
+
+<footer class="site-foot" style="--maxw:1180px"><span>Mark Hutchinson</span><span><a href="/">Home</a> · <a href="/pages/">Life</a></span></footer>
 
 <script src="vendor/supabase-2.119.0.js"></script>
 <script src="sync.js?v=5"></script>

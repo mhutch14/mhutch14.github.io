@@ -1,0 +1,11 @@
+# GitHub Pages (Jekyll) settings. The site is plain HTML, so Jekyll only copies files.
+# Keep project files out of the published site.
+exclude:
+  - README.md
+  - CLAUDE.md
+  - package.json
+  - package-lock.json
+  - node_modules
+  - tests
+  - supabase
+  - .gitignore
