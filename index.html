@@ -13,7 +13,7 @@
 <meta name="description" content="Odds & Ends: everyday tools for money, meals and more, by Mark Hutchinson.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="/assets/site.css?v=4">
+<link rel="stylesheet" href="/assets/site.css?v=5">
 <script src="/assets/theme.js?v=1"></script>
 <style>
 .page{--maxw:980px}
@@ -22,6 +22,7 @@
 .section-head a{font-size:14px;font-weight:500}
 .tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 @media (max-width:700px){.tools{grid-template-columns:minmax(0,1fr)}}
+@media (min-width:900px){.tools{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .tools a.card{height:100%;padding:24px;grid-template-rows:auto auto 1fr}
 .tools a.card b{font-size:24px}
 .tools a.card .kind{grid-column:1;color:var(--fg);font-weight:500;font-size:15px}
@@ -48,6 +49,13 @@
   <section aria-labelledby="tools-h">
     <div class="section-head"><h2 id="tools-h">Tools</h2><a href="/pages/">All tools &rarr;</a></div>
     <ul class="cards tools">
+      <li><a class="card" href="/pages/timesheet.html">
+        <b>TimeSheet</b>
+        <span class="kind">Weekly hours &amp; PTO</span>
+        <span class="desc">Clock in and out, see when you can leave, and track PTO and holidays.</span>
+        <span class="tags"><span class="tag">Work</span><span class="tag">Syncs</span></span>
+        <span class="go" aria-hidden="true">&rarr;</span>
+      </a></li>
       <li><a class="card" href="/pages/budget.html">
         <b>Ledger</b>
         <span class="kind">Monthly budget</span>

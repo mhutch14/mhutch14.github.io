@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="en">
+<!--
+  TimeSheet (/pages/timesheet.html): weekly hours, clock-out targets, PTO and holidays.
+  Logic lives in timesheet-core.js (unit tested). State is saved to localStorage and, when
+  signed in, synced through sync.js (page "timesheet"). Ported from an Excel/VBA workbook.
+-->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TimeSheet · Weekly Hours &amp; PTO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css?v=5">
+<script src="/assets/theme.js?v=1"></script>
+<style>
+.ts{--maxw:1280px;max-width:var(--maxw);margin:0 auto;
+  --card:var(--surface); --field:var(--bg); --hair:var(--line); --track:var(--line);
+  --tx:var(--fg); --mut:var(--muted); --dim:var(--done); --acc:var(--accent); --link:var(--accent);
+  --ring:color-mix(in srgb,var(--accent) 25%,transparent); --ok:var(--good); --hol:var(--warn); --hol-bg:var(--warn-soft); --sw-off:var(--line);
+  --r:var(--radius); --r2:14px; font-size:14px; line-height:1.47}
+.ts button,.ts input,.ts select,.ts textarea{font:inherit;color:inherit;letter-spacing:inherit}
+.ts .num{font-variant-numeric:tabular-nums}
+.ts h3{margin:0;font-weight:600;letter-spacing:-.02em}
+.ts .muted{color:var(--mut)} .ts .dim{color:var(--dim)}
+
+/* page header: title, save state, sync, tabs */
+.ts-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.ts-head .side{display:flex;flex-direction:column;gap:8px;align-items:flex-end;min-width:0}
+#sync{max-width:480px}
+.save{display:flex;align-items:center;gap:7px;color:var(--mut);font-size:12px;white-space:nowrap}
+.save i{width:7px;height:7px;border-radius:50%;background:var(--good)}
+.save.bad i{background:var(--bad)} .save.bad{color:var(--bad)}
+.tabs{display:flex;gap:4px;max-width:100%;overflow-x:auto;scrollbar-width:none;background:var(--surface);border-radius:980px;padding:4px;width:max-content;margin-bottom:22px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{border:0;background:transparent;color:var(--mut);padding:7px 16px;border-radius:980px;cursor:pointer;font-size:14px;font-weight:500;white-space:nowrap}
+.tabs button:hover{color:var(--fg)}
+.tabs button.on{color:var(--on-accent);background:var(--accent)}
+.tab{display:none}.tab.on{display:block}
+
+/* cards & basics */
+.ts .card{background:var(--card);border-radius:var(--r);padding:24px}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.card-h h3{font-size:19px;color:var(--tx)}
+.stack{display:flex;flex-direction:column;gap:20px;min-width:0}
+.ts .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+.ts .grid>*,.stack>*,.hgrid>*{min-width:0}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:980px;font-size:12px;font-weight:500;background:var(--field);color:var(--mut)}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.live{color:var(--ok)} .pill.live::before{animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.ts .btn{border:0;background:var(--field);color:var(--fg);padding:8px 16px;border-radius:980px;cursor:pointer;font-size:14px;font-weight:500;white-space:nowrap}
+.ts .btn:hover{background:var(--line)}
+.ts .btn.pri{background:var(--accent);color:var(--on-accent)} .ts .btn.pri:hover{filter:brightness(1.08)}
+.ts .btn.danger{background:transparent;color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)} .ts .btn.danger:hover{background:var(--bad-soft)}
+.ts .btn.ghost{background:transparent;color:var(--link)} .ts .btn.ghost:hover{background:var(--field)}
+.ts .btn.sm{padding:5px 12px;font-size:12.5px}
+.ts .btn:disabled{opacity:.4;cursor:not-allowed}
+.ts input[type=time],.ts input[type=date],.ts input[type=number],.ts input[type=text],.ts select,.ts textarea{
+  width:100%;background:var(--field);border:1px solid transparent;border-radius:11px;padding:8px 10px;outline:none;transition:border-color .12s,box-shadow .12s;min-width:0;color:var(--fg)}
+.modal input[type=time],.modal input[type=date],.modal input[type=number],.modal textarea,.ts .card select,.rowbar>input{background:var(--card);border-color:var(--line)}
+.ts input:hover,.ts select:hover,.ts textarea:hover{border-color:var(--line)}
+.ts input:focus,.ts select:focus,.ts textarea:focus{border-color:var(--acc);box-shadow:0 0 0 4px var(--ring)}
+.ts input:disabled{opacity:.45;cursor:not-allowed}
+.ts input[readonly]{color:var(--mut)}
+label.f{display:block;margin:14px 0 0;font-size:12.5px;color:var(--mut)} label.f>input,label.f>select{margin-top:6px;color:var(--tx);font-size:15px}
+.lbl{font-size:12.5px;color:var(--mut);font-weight:400}
+
+/* switch */
+.switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-size:12.5px;color:var(--mut)}
+.ts .switch input{appearance:none;-webkit-appearance:none;width:36px;height:22px;border-radius:99px;background:var(--sw-off);position:relative;cursor:pointer;transition:background .2s;flex:none;border:0;padding:0;box-shadow:none}
+.ts .switch input::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--on-accent);transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.ts .switch input:checked{background:var(--good)} .ts .switch input:checked::after{left:16px}
+.ts .switch input:focus{box-shadow:0 0 0 4px var(--ring)}
+.ts .switch input:disabled{opacity:.4}
+
+/* today */
+.clock{font-size:56px;line-height:1.05;font-weight:600;letter-spacing:-.035em;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.clock small{font-size:19px;font-weight:400;color:var(--mut);margin-left:6px;letter-spacing:-.01em}
+.dateline{color:var(--mut);margin-bottom:18px;font-size:15px}
+.run{width:100%;padding:13px;border-radius:980px;border:0;font-size:16px;font-weight:500;cursor:pointer;color:var(--on-accent);background:var(--accent)}
+.run:hover{filter:brightness(1.08)}
+.run.stop{background:var(--bad)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.two label{font-size:12.5px;color:var(--mut)} .two input{margin-top:6px;font-size:16px;color:var(--tx)}
+.bighrs{display:flex;align-items:baseline;gap:8px;margin:20px 0 8px}
+.bighrs b{font-size:48px;line-height:1;font-weight:600;letter-spacing:-.035em} .bighrs span{color:var(--mut);font-size:15px}
+.bar{height:6px;border-radius:99px;background:var(--track);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;border-radius:99px;background:var(--acc);transition:width .6s}
+.barnote{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:7px}
+.actions{display:flex;gap:12px;align-items:center;margin-top:18px;flex-wrap:wrap}
+
+/* PTO card */
+.kv{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--hair)}
+.kv:first-of-type{border-top:0} .kv span{color:var(--mut)} .kv b{font-weight:500}
+.ptobig{display:flex;align-items:baseline;gap:6px;margin-bottom:6px}
+.ts .ptobig input{font-size:44px;line-height:1.1;font-weight:600;width:128px;padding:0 6px;margin-left:-6px;background:transparent;letter-spacing:-.035em;-moz-appearance:textfield}
+.ptobig input::-webkit-inner-spin-button{display:none}
+.ts .ptobig input:focus{background:var(--field)}
+.linkbtn{background:none;border:0;color:var(--link);cursor:pointer;padding:0;font-size:14px;font-weight:500}
+.linkbtn:hover{text-decoration:underline}
+
+/* week */
+.weekhead{display:flex;align-items:baseline;gap:12px;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap}
+.ts .weekhead h2{font-size:28px;letter-spacing:-.025em;margin:0}
+.days{display:grid;grid-template-columns:repeat(7,minmax(106px,1fr));gap:8px;overflow-x:auto;padding:2px 2px 6px}
+.day{background:var(--field);border-radius:18px;padding:14px 12px;display:flex;flex-direction:column;gap:9px;min-width:0;position:relative}
+.ts .day input[type=time],.ts .day input[type=number]{background:var(--card)}
+.day.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.day.wkend .dh b{color:var(--dim)}
+.day.hol{background:var(--hol-bg)}
+.dh{display:flex;justify-content:space-between;align-items:baseline} .dh b{font-size:13px;font-weight:600;color:var(--tx)} .dh span{color:var(--mut);font-size:12.5px}
+.day .tag{font-size:11px;font-weight:600;color:var(--hol);background:transparent;border:0;padding:0;white-space:normal;line-height:1.3}
+.day label.s{font-size:11.5px;color:var(--mut);display:block}
+.ts .day label.s input{margin-top:4px;padding:6px 7px;font-size:12.5px;color:var(--tx);border-radius:9px}
+.ts .day input.bad{border-color:var(--bad)}
+.day input[type=time]::-webkit-calendar-picker-indicator,.tbl td input[type=time]::-webkit-calendar-picker-indicator{display:none}
+.paid{margin-top:auto;padding-top:10px;border-top:1px solid var(--hair);display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.paid b{font-size:26px;line-height:1;font-weight:600;letter-spacing:-.03em} .paid small{font-size:11px;color:var(--dim);white-space:nowrap}
+.paid b.none{color:var(--dim);font-weight:400}
+.hwbtn{font-size:11px;background:none;border:0;color:var(--link);padding:0;cursor:pointer;text-align:left}
+.hwbtn:hover{text-decoration:underline}
+
+.sumrow{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.ts .tile{background:var(--field);border-radius:18px;padding:16px 18px}
+.ts .tile .v{font-size:34px;line-height:1.1;font-weight:600;letter-spacing:-.035em;margin-top:4px}
+.ts .tile .sub{font-size:12.5px;color:var(--mut);margin-top:6px}
+.pos{color:var(--ok)}.neg{color:var(--bad)}.neu{color:var(--tx)}
+.float-msg{margin-top:14px;padding:12px 16px;border-radius:14px;background:var(--hol-bg);color:var(--hol);font-weight:500}
+
+/* targets */
+.tiles3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ts .tile.big .v{font-size:38px}
+.ts .tile input[type=time]{margin:2px 0 0 -6px;width:calc(100% + 6px);font-size:32px;line-height:1.15;font-weight:600;padding:1px 6px;letter-spacing:-.035em;background:transparent}
+.ts .tile input[type=time]:focus{background:var(--card)}
+
+/* banners & toasts */
+#banners{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+#banners:empty{display:none}
+.banner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 20px;border-radius:18px;background:var(--card)}
+.banner.warn{background:var(--warn-soft)} .banner.bad{background:var(--bad-soft)} .banner.info{background:var(--accent-soft)}
+.banner p{margin:0;flex:1;min-width:220px} .banner .ba{display:flex;gap:8px}
+.ts .banner .btn:not(.pri){background:var(--surface)}
+#toasts{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:90;align-items:center}
+.toast{background:var(--fg);color:var(--bg);padding:11px 20px;border-radius:980px;box-shadow:0 10px 30px rgba(0,0,0,.22);animation:up .25s;font-size:14px}
+@keyframes up{from{opacity:0;transform:translateY(10px)}}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:grid;place-items:center;z-index:80;padding:20px;animation:fade .18s}
+@keyframes fade{from{opacity:0}}
+.modal{background:var(--surface);color:var(--fg);border-radius:24px;padding:30px;width:min(470px,100%);max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.3);font-size:14px;line-height:1.47}
+.modal.wide{width:min(640px,100%)}
+.modal h2{font-size:24px;margin:0 0 10px;letter-spacing:-.025em} .modal p{margin:8px 0;color:var(--mut)} .modal .mbody{color:var(--fg)}
+.mact{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;flex-wrap:wrap}
+.err{color:var(--bad);font-size:12.5px;margin-top:10px;min-height:1px}
+.mini{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px} .mini td,.mini th{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left} .mini th{color:var(--muted);font-size:12px;font-weight:400}
+.mini td:last-child,.mini th:last-child{text-align:right}
+.radio{display:flex;gap:10px;align-items:center;margin-top:12px} .radio input[type=radio]{width:auto;accent-color:var(--accent)}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse} .tbl th{font-size:12px;color:var(--mut);text-align:left;padding:10px 10px;font-weight:400;border-bottom:1px solid var(--hair);position:sticky;top:0;background:var(--card);z-index:1}
+.tbl td{padding:5px 6px;border-bottom:1px solid var(--hair)} .tbl tr:last-child td{border-bottom:0}
+.ts .tbl td input{padding:6px 8px;font-size:14px;background:transparent}
+.ts .tbl td input:focus{background:var(--card)}
+.tbl td input[type=date],.tbl td input[type=time]{max-width:150px}
+.tbl .r{text-align:right}
+.scroll{max-height:460px;overflow:auto;border:1px solid var(--hair);border-radius:16px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.ts .stats .tile{background:var(--card)} .ts .stats .tile .v{font-size:32px}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.chart{width:100%;height:auto;display:block;overflow:visible}
+.chart text{fill:var(--dim);font:11px var(--body)} .chart .grid line{stroke:var(--hair)} .chart .ref{stroke:var(--warn);stroke-dasharray:4 4}
+.tt{position:fixed;pointer-events:none;background:var(--fg);color:var(--bg);padding:6px 12px;border-radius:10px;font-size:12px;z-index:70;white-space:nowrap}
+.rowbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.section{margin-top:18px}
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.help li{margin:8px 0;color:var(--mut)} .help li b{color:var(--tx);font-weight:600} .help ul{padding-left:18px;margin:8px 0}
+.ver{display:grid;grid-template-columns:60px 1fr;gap:6px 12px;font-size:13.5px} .ver b{color:var(--tx);font-weight:600} .ver span{color:var(--mut)}
+.warnnote{color:var(--warn);font-size:12.5px}
+
+@media (max-width:1100px){.ts .grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.charts,.hgrid{grid-template-columns:1fr}}
+@media (max-width:760px){.ts-head .side{align-items:flex-start}.sumrow,.tiles3{grid-template-columns:1fr}.clock{font-size:46px}.ts .weekhead h2{font-size:22px}.ts .card{padding:20px}
+  .tabs{width:auto}.tabs button{padding:7px 12px}}
+@media print{.tabs,.actions,.btn,#banners,#sync{display:none!important}}
+</style>
+</head>
+<body>
+<nav class="site-nav" style="--maxw:1280px" aria-label="Site">
+  <a class="brand" href="/">Odds &amp; Ends</a>
+  <div class="links"><a href="/">Home</a><a href="/pages/" aria-current="page">Tools</a><a href="/resume/">Resume</a></div>
+</nav>
+
+<div class="ts">
+<header class="ts-head">
+  <div>
+    <div class="eyebrow">Weekly hours &amp; PTO</div>
+    <h1>TimeSheet</h1>
+  </div>
+  <div class="side">
+    <div class="save" id="saveInd" title="Saved in this browser, and to your account when signed in"><i></i><span id="saveTxt">Saved</span></div>
+    <div id="sync"></div>
+  </div>
+</header>
+<nav class="tabs" id="nav" aria-label="TimeSheet sections">
+  <button data-tab="dash" class="on">Dashboard</button>
+  <button data-tab="archive">Archive</button>
+  <button data-tab="planner">Planner</button>
+  <button data-tab="holidays">Holidays</button>
+  <button data-tab="settings">Settings</button>
+</nav>
+<div id="banners"></div>
+
+<main>
+<!-- ================= DASHBOARD ================= -->
+<section class="tab on" id="tab-dash">
+ <div class="grid">
+  <div class="stack">
+    <article class="card">
+      <div class="card-h"><h3>Today</h3><span class="pill" id="runPill">Paused</span></div>
+      <div class="clock" id="clock">--:--<small>:--</small></div>
+      <div class="dateline" id="dateLine"></div>
+      <button class="run" id="runBtn">Clock in</button>
+      <div class="two">
+        <label>In<input type="time" id="inTime"></label>
+        <label>Out<input type="time" id="outTime"></label>
+      </div>
+      <div class="bighrs"><b class="num" id="todayHrs">0.0</b><span>hours today</span></div>
+      <div class="bar" id="dayBar"><i></i></div>
+      <div class="barnote"><span id="dayBarL">Day progress</span><span id="dayBarR"></span></div>
+      <div class="actions">
+        <button class="btn" id="breakBtn" title="Clocked out for a while? Log the time away so it's taken off today's hours">Log a break</button>
+        <label class="switch" title="Working Through Lunch — no lunch is deducted today"><input type="checkbox" id="todayWtl"> WTL today</label>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-h"><h3>PTO</h3><button class="linkbtn" id="ptoHist">History</button></div>
+      <div class="ptobig"><input type="number" step="0.1" id="ptoBank" placeholder="—" title="PTO bank (hours). Leave empty to turn off accrual tracking."><span class="muted">hours banked</span></div>
+      <div class="kv"><span title="Next accrual date">Next accrual</span><b class="num" id="nad">—</b></div>
+      <div class="kv"><span>Accrual amount</span><b class="num" id="naa">—</b></div>
+      <div class="kv"><span>Max bank</span><b class="num" id="maxAcc">—</b></div>
+      <div class="kv"><span>Service years · annual</span><b class="num" id="svc">—</b></div>
+      <div class="kv"><span>Banked holidays</span><button class="linkbtn num" id="bnkHol" title="Open the holiday list">0</button></div>
+    </article>
+  </div>
+
+  <div class="stack">
+    <article class="card">
+      <div class="weekhead"><h2 id="weekTitle">This week</h2>
+        <span class="muted" style="font-size:13px">Every field is editable · WTL = working through lunch</span></div>
+      <div class="days" id="days"></div>
+      <div class="sumrow">
+        <div class="tile"><div class="lbl">Total hours</div><div class="v num" id="wkTotal">0.0</div>
+          <div class="bar" style="margin-top:10px"><i id="wkBar"></i></div><div class="sub" id="wkTotalSub">of 40</div></div>
+        <div class="tile"><div class="lbl">Remaining</div><div class="v num" id="wkRem">40.0</div><div class="sub">to reach 40 hours</div></div>
+        <div class="tile"><div class="lbl">Ahead / behind</div><div class="v num" id="wkAhead">0.0</div><div class="sub" id="wkAheadSub">vs. 8 h per day</div></div>
+      </div>
+      <div class="float-msg" id="floatMsg" hidden></div>
+    </article>
+
+    <article class="card">
+      <div class="card-h"><h3>Clock-out targets</h3><span class="muted" style="font-size:12px" id="tgNote"></span></div>
+      <div class="tiles3">
+        <div class="tile big"><div class="lbl">8-hour clock out</div><div class="v num" id="fullOut">—</div><div class="sub" id="fullOutH"></div></div>
+        <div class="tile big"><div class="lbl">Even clock out</div><div class="v num" id="evenOut">—</div><div class="sub" id="evenOutH"></div></div>
+        <div class="tile big"><div class="lbl">Plan</div><input type="time" id="planDept" title="Planned departure time"><div class="sub" id="planH"></div>
+          <label class="switch" style="margin-top:8px"><input type="checkbox" id="planWtl"> Plan WTL</label></div>
+      </div>
+      <p class="muted" style="margin:14px 0 0;font-size:12.5px"><b style="color:var(--tx)">8-hour</b>: when you hit 8.0 hours today. <b style="color:var(--tx)">Even</b>: the earliest you can leave and still be on pace for 8 h/day this week (“—” means you're already ahead). <b style="color:var(--tx)">Plan</b>: hours you'd have if you left at your planned time.</p>
+    </article>
+  </div>
+ </div>
+</section>
+
+<!-- ================= ARCHIVE ================= -->
+<section class="tab" id="tab-archive">
+  <div class="stats">
+    <div class="tile"><div class="lbl">Days logged</div><div class="v num" id="stDays">0</div></div>
+    <div class="tile"><div class="lbl">Average hours / day</div><div class="v num" id="stAvg">—</div></div>
+    <div class="tile"><div class="lbl">Std deviation</div><div class="v num" id="stSd">—</div></div>
+    <div class="tile"><div class="lbl">Avg hours / week</div><div class="v num" id="stWk">—</div></div>
+  </div>
+  <div class="rowbar" style="margin-bottom:12px"><span class="lbl">Chart range</span>
+    <select id="chartRange" style="width:auto"><option value="30">Last 30 days logged</option><option value="90" selected>Last 90 days logged</option><option value="365">Last 365 days logged</option><option value="0">Everything</option></select></div>
+  <div class="charts">
+    <article class="card"><div class="card-h"><h3>Hours per day</h3></div><div id="chHours"></div></article>
+    <article class="card"><div class="card-h"><h3>PTO bank</h3></div><div id="chPto"></div></article>
+  </div>
+  <article class="card">
+    <div class="card-h"><h3>Daily archive</h3>
+      <div class="rowbar"><button class="btn sm" id="arcAdd">+ Add day</button><button class="btn sm" id="arcImport">Import / paste</button><button class="btn sm" id="arcExport">Export CSV</button></div></div>
+    <div class="scroll"><table class="tbl" id="arcTbl"><thead><tr><th>Date</th><th>In</th><th>Out</th><th class="r">Hours</th><th class="r">PTO bank</th><th></th></tr></thead><tbody></tbody></table></div>
+    <div class="rowbar" style="margin-top:10px"><button class="btn sm" id="arcMore" hidden>Show more</button><span class="muted" id="arcCount"></span></div>
+  </article>
+</section>
+
+<!-- ================= PLANNER ================= -->
+<section class="tab" id="tab-planner">
+  <article class="card" style="max-width:860px">
+    <div class="card-h"><h3>Week planner</h3><label class="switch"><input type="checkbox" id="plWtl"> Plan WTL</label></div>
+    <p class="muted" style="margin-top:0">Enter the hours you're scheduled for Monday–Thursday; Friday is whatever is left to reach the weekly target. Add the time you'll come in and the planner tells you when you can leave.</p>
+    <table class="tbl" id="plTbl"><thead><tr><th>Day</th><th class="r">Actual so far</th><th>Scheduled hours</th><th>Coming in</th><th class="r">Leaving</th></tr></thead><tbody></tbody></table>
+    <div class="rowbar" style="margin-top:14px"><label class="lbl" for="plTarget">Weekly target</label><input type="number" id="plTarget" step="0.1" style="width:110px"><span class="muted" id="plSum"></span></div>
+  </article>
+</section>
+
+<!-- ================= HOLIDAYS ================= -->
+<section class="tab" id="tab-holidays">
+  <article class="card" style="max-width:860px">
+    <div class="card-h"><h3>Company holidays</h3>
+      <div class="rowbar"><select id="holYear" style="width:auto"></select><button class="btn sm" id="holReset">Reset year</button></div></div>
+    <p class="muted" style="margin-top:0">Holidays inside a week are filled in automatically as 8 paid hours. <b style="color:var(--tx)">Floatable</b> holidays can be <b style="color:var(--tx)">banked</b>: work ≥ 44 paid hours (holiday included) in that week and the holiday is banked automatically, costing <i>48 − hours</i> of PTO. You can also tick them manually.</p>
+    <table class="tbl" id="holTbl"><thead><tr><th>Holiday</th><th>Starts</th><th>Ends</th><th>Floatable</th><th>Banked</th></tr></thead><tbody></tbody></table>
+    <p class="muted" style="margin-bottom:0" id="holNote"></p>
+  </article>
+</section>
+
+<!-- ================= SETTINGS ================= -->
+<section class="tab" id="tab-settings">
+ <div class="hgrid">
+  <div class="stack">
+    <article class="card">
+      <div class="card-h"><h3>Profile</h3></div>
+      <label class="f">Start (hire) date <input type="date" id="sHire"></label>
+      <label class="f">Lunch starts <input type="time" id="sLunch"></label>
+      <p class="muted" style="font-size:12.5px;margin:8px 0 0">A 30-minute lunch is deducted automatically when your day spans it (unless WTL is on). Years of service decide your PTO accrual.</p>
+      <label class="f" style="display:flex;align-items:center;gap:10px;margin-top:16px"><span class="switch"><input type="checkbox" id="sAuto"></span> Start the clock automatically when this page opens</label>
+    </article>
+    <article class="card">
+      <div class="card-h"><h3>Your data</h3></div>
+      <p class="muted" style="margin-top:0">Everything is saved automatically in this browser, and to your account when you're signed in (top of the page) so it follows you between devices. Export a backup now and then.</p>
+      <div class="rowbar"><button class="btn pri" id="bkExport">Export backup</button><button class="btn" id="bkImport">Restore from backup</button><input type="file" id="bkFile" accept=".json,application/json" hidden></div>
+      <div class="rowbar section"><button class="btn danger" id="clrArchive">Clear archive</button><button class="btn danger" id="resetAll">Reset everything</button></div>
+      <p class="muted" style="font-size:12.5px;margin-bottom:0" id="lastBackup"></p>
+    </article>
+  </div>
+  <div class="stack">
+    <article class="card help">
+      <div class="card-h"><h3>How it works</h3></div>
+      <ul>
+        <li><b>Hours are counted in 6-minute units (tenths of an hour)</b> using the same rounding as the original workbook, so the totals line up with your time system.</li>
+        <li><b>Clock in</b> stamps your IN time and keeps OUT = now every second. <b>Stop</b> freezes OUT. Resuming after a gap offers to log it as a break.</li>
+        <li><b>Lunch</b>: 30 minutes from your lunch start are deducted when you work across it. Tick <b>WTL</b> to skip the deduction for a day.</li>
+        <li><b>Breaks</b> (clocked out and back in) are subtracted from that day's paid hours. Don't log your normal lunch — it's automatic.</li>
+        <li><b>New week</b> (Sunday): last week is archived and cleared. If it's under 40 hours you're asked whether to cover the gap with PTO.</li>
+        <li><b>PTO accrues</b> on the Friday ending the first full week of each month; you're asked before it's added, capped at 1.5× your annual accrual.</li>
+        <li><b>Even clock out</b> is the earliest you can leave and still be on pace for 8 hours a day this week.</li>
+      </ul>
+    </article>
+    <article class="card">
+      <div class="card-h"><h3>Version history</h3></div>
+      <div class="ver">
+        <b>2.1.0</b><span>Moved into Odds &amp; Ends: site look, light/dark mode, sync across devices when signed in.</span>
+        <b>2.0.0</b><span>HTML edition: dark UI, auto-saving state, backup/restore, break log, PTO history, charts, CSV import/export.</span>
+        <b>1.3.3</b><span>Fixed auto update for holidays in the new year</span>
+        <b>1.3.2</b><span>Fixed non-floatable holiday logic · holiday log shows year</span>
+        <b>1.3.1</b><span>Banked-holiday rework completed</span>
+        <b>1.3.0</b><span>Holiday logger &amp; annual date changer · PTO/hours graphs</span>
+        <b>1.2.0</b><span>Fixed printing times in a holiday week</span>
+        <b>1.1.x</b><span>Multi clock-in, version tab, graph tweaks</span>
+        <b>1.0.0</b><span>Initial</span>
+      </div>
+    </article>
+  </div>
+ </div>
+</section>
+</main>
+<div id="modalRoot"></div>
+<div id="toasts"></div>
+</div>
+
+<footer class="site-foot" style="--maxw:1280px"><span>Odds &amp; Ends · Mark Hutchinson</span><span><a href="/">Home</a> · <a href="/pages/">Tools</a></span></footer>
+
+<script src="timesheet-core.js?v=1"></script>
+<script src="vendor/supabase-2.119.0.js"></script>
+<script src="sync.js?v=6"></script>
+<script>
+'use strict';
+/* ===== APP: state, UI and the "macro" flows (clock in, rollover, PTO accrual, floating holidays) ===== */
+const Core = window.TimeCore;
+const { pad, ymd, parse, addDays, sundayOf, r1, toMin, fromMin, fmt12, calcHrs, calcCIOHrs, calcMinTime } = Core;
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const KEY = 'timesheet.state.v1';
+const DAYN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const f1 = x => (x == null || isNaN(x)) ? '—' : x.toFixed(1);
+const todayStr = () => ymd(new Date());
+const nowMinutes = () => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); };
+const shortDate = s => { const d = parse(s); return (d.getMonth() + 1) + '/' + d.getDate(); };
+const longDate = s => parse(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+/* ---------------- state & persistence ---------------- */
+function defaults() {
+  return {
+    v: 1,
+    user: { hire: null, lunch: 660, ptoBank: null, planWTL: true, planDept: 960, autoStart: false },
+    week: { sunday: null, days: Array.from({ length: 7 }, () => Core.blankDay()) },
+    acc: { date: null, amt: 0, check: true, pending: null },
+    hol: { edits: {}, banked: {} },
+    archive: [], pto: [],
+    planner: { sched: [8, 8, 8, 8], coming: [420, 420, 420, 420, 420], target: 40.1, wtl: false },
+    lastYear: null, lastBackup: null
+  };
+}
+const isObj = x => x && typeof x === 'object' && !Array.isArray(x);
+function merge(def, src) {
+  if (!isObj(def) || !isObj(src)) return src === undefined ? def : src;
+  const out = {}; for (const k in def) out[k] = k in src ? merge(def[k], src[k]) : def[k];
+  for (const k in src) if (!(k in out)) out[k] = src[k];
+  return out;
+}
+function normalize() {
+  const days = (state.week.days || []).slice(0, 7).map(d => Object.assign(Core.blankDay(), d));
+  while (days.length < 7) days.push(Core.blankDay());
+  state.week.days = days;
+  if (!state.week.sunday) state.week.sunday = sundayOf(todayStr());
+  state.archive = (state.archive || []).filter(e => e && e.date).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+}
+let storageOK = true, lastSaved = null, lastSaveAt = null;
+function loadState() {
+  let raw = null;
+  try { raw = localStorage.getItem(KEY); } catch (e) { storageOK = false; }
+  const d = defaults();
+  if (!raw) return d;
+  lastSaved = raw;
+  try { return merge(d, JSON.parse(raw)); }
+  catch (e) { try { localStorage.setItem(KEY + '.corrupt', raw); } catch (_) { } return d; }
+}
+let state = loadState(); normalize();
+function save() {
+  let s; try { s = JSON.stringify(state); } catch (e) { return; }
+  if (s === lastSaved) return;
+  try { localStorage.setItem(KEY, s); storageOK = true; } catch (e) { storageOK = false; }
+  lastSaved = s; lastSaveAt = new Date();
+  if (window.PageSync) PageSync.save(state);
+  paintSave();
+}
+function paintSave() {
+  const el = $('#saveInd'); el.classList.toggle('bad', !storageOK);
+  $('#saveTxt').textContent = !storageOK ? 'Not saving!' : lastSaveAt ? 'Saved ' + fmt12(lastSaveAt.getHours() * 60 + lastSaveAt.getMinutes()) : 'Saved';
+}
+window.addEventListener('storage', e => {
+  if (e.key === KEY && e.newValue) { try { state = merge(defaults(), JSON.parse(e.newValue)); normalize(); lastSaved = e.newValue; fullRender(); } catch (_) { } }
+});
+
+/* ---------------- runtime flags ---------------- */
+let running = false, runDate = null, modalCount = 0, maintBusy = false, rolloverDeclined = false, activeTab = 'dash';
+
+/* ---------------- derived values ---------------- */
+function derive() {
+  const n = new Date(), today = ymd(n), nm = n.getHours() * 60 + n.getMinutes();
+  const u = state.user, wk = state.week;
+  const cur = wk.sunday === sundayOf(today);
+  const days = Core.weekDays(wk, u.lunch, state.hol.edits);
+  const total = Core.weekTotal(days), dow = n.getDay(), goal = dow * 8;
+  const ahead = r1(total - goal), rem = Math.max(0, r1(40 - total));
+  const td = cur ? days[dow] : null;
+  const D = { n, today, nm, cur, days, total, rem, ahead, goal, td, dow };
+  if (td && td.d.in != null) {
+    const inM = td.d.in, w = td.d.wtl, L = u.lunch;
+    D.full = calcMinTime(inM, 8, w, L); D.fullH = D.full != null ? r1(calcHrs(inM, D.full, w, L)) : null;
+    const need = r1((td.paid || 0) - ahead);
+    const raw = calcMinTime(inM, need, w, L);
+    D.evenState = raw == null ? (need > 0.001 ? 'unreachable' : 'ahead') : (nm > raw ? 'ahead' : 'time');
+    D.need = need; const ev = D.evenState === 'time' ? raw : null;
+    D.even = ev; D.evenH = ev != null ? r1(calcHrs(inM, ev, w, L)) : null;
+    D.planH = u.planDept != null ? r1(calcHrs(inM, u.planDept, u.planWTL, L)) : null;
+    D.prog = u.planDept > inM ? Math.min(1, Math.max(0, (nm - inM) / (u.planDept - inM))) : 0;
+  }
+  return D;
+}
+
+/* ---------------- tiny UI kit ---------------- */
+function toast(msg, ms = 3500) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; $('#toasts').appendChild(t);
+  setTimeout(() => t.remove(), ms);
+}
+function modal({ title, body, actions, wide, dismiss = true, onOpen }) {
+  return new Promise(res => {
+    const wrap = document.createElement('div'); wrap.className = 'overlay';
+    const box = document.createElement('div'); box.className = 'modal' + (wide ? ' wide' : ''); box.setAttribute('role', 'dialog');
+    box.innerHTML = `<h2>${esc(title)}</h2><div class="mbody"></div><div class="mact"></div>`;
+    const mb = $('.mbody', box); if (typeof body === 'string') mb.innerHTML = body; else if (body) mb.appendChild(body);
+    const close = v => { document.removeEventListener('keydown', key); wrap.remove(); modalCount--; res(v); };
+    const key = e => { if (e.key === 'Escape' && dismiss) close(null); };
+    (actions || []).forEach(a => {
+      const b = document.createElement('button'); b.className = 'btn ' + (a.cls || ''); b.textContent = a.label;
+      b.onclick = () => { if (a.validate && a.validate(box) === false) return; close(a.value); };
+      $('.mact', box).appendChild(b);
+    });
+    wrap.appendChild(box); $('#modalRoot').appendChild(wrap); modalCount++;
+    document.addEventListener('keydown', key);
+    if (dismiss) wrap.addEventListener('mousedown', e => { if (e.target === wrap) close(null); });
+    const first = $('input:not([type=hidden]),select,textarea', box) || $('button.pri', box); if (first) first.focus();
+    if (onOpen) onOpen(box, close);
+  });
+}
+const confirmDlg = (title, msg, { ok = 'OK', cancel = 'Cancel', danger = false } = {}) =>
+  modal({ title, body: `<p style="color:var(--tx)">${msg}</p>`, actions: [{ label: cancel, value: false }, { label: ok, value: true, cls: danger ? 'danger' : 'pri' }] });
+const infoDlg = (title, msg) => modal({ title, body: `<p style="color:var(--tx)">${msg}</p>`, actions: [{ label: 'OK', value: true, cls: 'pri' }] });
+
+/* ---------------- ledger + archive helpers ---------------- */
+function ptoLog(type, hrs, note) {
+  state.pto.push({ date: todayStr(), type, hrs: r1(hrs), bank: state.user.ptoBank, note: note || '' });
+  if (state.pto.length > 500) state.pto.splice(0, state.pto.length - 500);
+}
+function upsertArchive(e) {
+  const a = state.archive; let lo = 0, hi = a.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (a[m].date < e.date) lo = m + 1; else hi = m; }
+  if (a[lo] && a[lo].date === e.date) {
+    const o = a[lo]; if (o.in !== e.in || o.out !== e.out || o.hrs !== e.hrs || o.pto !== e.pto) a[lo] = e;
+  } else a.splice(lo, 0, e);
+}
+function syncArchive() {
+  if (!state.week.sunday) return;
+  const days = Core.weekDays(state.week, state.user.lunch, state.hol.edits);
+  for (const x of days) {
+    if (x.d.in == null) continue;
+    if (x.hol && !x.d.hw) continue;        // holiday rows are not archived (as in the workbook)
+    upsertArchive({ date: x.date, in: x.d.in, out: x.d.out, hrs: x.paid, pto: state.user.ptoBank });
+  }
+}
+function commit() { syncArchive(); save(); update(); }
+const bankedCount = y => { const b = (state.hol.banked[y]) || {}; return Core.HOLS.filter(h => h[2] && b[h[0]]).length; };
+
+/* ======================================================================
+   Flows
+   ====================================================================== */
+async function setupDialog() {
+  const u = state.user, t = todayStr();
+  let result = null;
+  const body = `<p>Welcome! Two quick details so hours and PTO are calculated correctly.</p>
+   <label class="f">Start (hire) date<input type="date" id="su-hire" max="${t}" value="${u.hire || ''}"></label>
+   <label class="f">Lunch starts<input type="time" id="su-lunch" value="${fromMin(u.lunch != null ? u.lunch : 660)}"></label>
+   <label class="f">Current PTO balance in hours <span class="dim">(optional — leave empty to skip PTO tracking)</span><input type="number" id="su-pto" step="0.1" min="0" value="${u.ptoBank != null ? u.ptoBank : ''}"></label>
+   <div class="err" id="su-err"></div>`;
+  await modal({
+    title: 'Initial setup', body, dismiss: false,
+    actions: [
+      { label: 'Use defaults', value: 'def', cls: 'ghost' },
+      {
+        label: 'Save', value: 'ok', cls: 'pri', validate: box => {
+          const h = $('#su-hire', box).value, l = toMin($('#su-lunch', box).value), err = $('#su-err', box);
+          if (!h) { err.textContent = 'Enter your start date.'; return false; }
+          if (h > t) { err.textContent = 'Start date is in the future — try again.'; return false; }
+          if (l == null) { err.textContent = 'Enter a lunch start time.'; return false; }
+          const p = $('#su-pto', box).value;
+          result = { hire: h, lunch: l, pto: p === '' ? null : Math.max(0, parseFloat(p)) };
+        }
+      }]
+  }).then(v => { if (v === 'def') result = { hire: t, lunch: 660, pto: u.ptoBank }; });
+  if (result) { state.user.hire = result.hire; state.user.lunch = result.lunch; if (result.pto != null) state.user.ptoBank = result.pto; }
+  save();
+}
+
+async function newYearCheck() {
+  const y = new Date().getFullYear();
+  if (state.lastYear == null) { state.lastYear = y; return; }
+  if (state.lastYear !== y) {
+    state.lastYear = y;
+    await infoDlg('Happy new year', `Holiday dates for ${y} are loaded and banked holidays start fresh.<br><br><b>Adjust your PTO to match the ATA</b> (Settings → or the PTO box) so this sheet and your official balance agree.`);
+  }
+}
+
+function resetWeek(sun) { state.week = { sunday: sun, days: Array.from({ length: 7 }, () => Core.blankDay()) }; }
+
+async function ensureCurrentWeek() {
+  const cur = sundayOf(todayStr()), wk = state.week;
+  if (wk.sunday === cur) return true;
+  const has = wk.days.some(d => d.in != null || d.out != null || d.lost > 0);
+  if (wk.sunday == null || !has) { resetWeek(cur); save(); return true; }
+
+  syncArchive();
+  const days = Core.weekDays(wk, state.user.lunch, state.hol.edits);
+  const total = Core.weekTotal(days), floats = Core.floatCheck(days, state.hol.banked);
+  const bank = state.user.ptoBank, short = total < 40 ? r1(40 - total) : 0;
+  const rows = days.map(x => `<tr><td>${DAYN[x.i]} ${shortDate(x.date)}</td><td>${x.hol && !x.d.hw ? esc(x.hol.name) : x.d.in != null ? fmt12(x.d.in) + ' – ' + fmt12(x.d.out) : '—'}</td><td>${x.paid != null ? f1(x.paid) : '—'}</td></tr>`).join('');
+  let extra = '';
+  floats.forEach(f => extra += `<p style="color:var(--hol)">⚑ You floated <b>${esc(f.name)}</b> — it will be banked${f.lostPto > 0 ? ` and <b>${f1(f.lostPto)} h</b> of PTO deducted` : ''}.</p>`);
+  const actions = [{ label: 'Not yet', value: 'cancel', cls: 'ghost' }];
+  if (short > 0 && bank != null) {
+    extra += `<p style="color:var(--tx)">Total is <b>${f1(total)}</b>, ${f1(short)} h under 40. Cover the gap with PTO?</p>`;
+    actions.push({ label: "Don't use PTO", value: 'nopto' }, { label: `Use ${f1(short)} h PTO`, value: 'pto', cls: 'pri' });
+  } else {
+    if (short > 0) extra += `<p>Total is ${f1(total)} (under 40). Set your PTO bank to track PTO usage.</p>`;
+    actions.push({ label: 'Close out week', value: 'nopto', cls: 'pri' });
+  }
+  const choice = await modal({
+    title: `New week — close out ${shortDate(wk.sunday)}–${shortDate(addDays(wk.sunday, 6))}`, wide: true, dismiss: false,
+    body: `<p>Last week gets archived and the log is cleared.</p><table class="mini"><thead><tr><th>Day</th><th>Time</th><th>Hours</th></tr></thead><tbody>${rows}<tr><td><b>Total</b></td><td></td><td><b>${f1(total)}</b></td></tr></tbody></table>${extra}`,
+    actions
+  });
+  if (choice === 'cancel' || choice == null) { rolloverDeclined = true; update(); return false; }
+  for (const f of floats) {
+    (state.hol.banked[f.year] = state.hol.banked[f.year] || {})[f.key] = true;
+    if (bank != null && f.lostPto > 0) { state.user.ptoBank = r1(state.user.ptoBank - f.lostPto); ptoLog('float', -f.lostPto, 'Floated ' + f.name); }
+    else ptoLog('float', 0, 'Floated ' + f.name);
+  }
+  if (choice === 'pto' && state.user.ptoBank != null) { state.user.ptoBank = r1(state.user.ptoBank - short); ptoLog('use', -short, 'Covered ' + f1(short) + ' h short week of ' + shortDate(wk.sunday)); }
+  syncArchive(); resetWeek(cur); rolloverDeclined = false; save(); update();
+  return true;
+}
+
+function accrualMaintenance() {
+  const u = state.user, a = state.acc, today = todayStr(); if (!u.hire) return;
+  const yrs = Core.serviceYears(u.hire, today);
+  if (u.ptoBank != null) {
+    if (a.date && today >= a.date) { if (a.check && !a.pending) a.pending = { date: a.date, amt: a.amt }; }
+    else a.check = true;
+  }
+  a.date = Core.calcAccDate(today); a.amt = Core.accAmt(parse(a.date).getMonth() + 1, yrs);
+}
+function addAccrual() {
+  const a = state.acc, u = state.user, p = a.pending; if (!p) return;
+  const max = Core.maxAccrual(Core.annualAccrual(Core.serviceYears(u.hire, todayStr())));
+  const old = u.ptoBank; let nb = r1(old + p.amt), capped = false;
+  if (nb > max) { nb = max; capped = true; }
+  u.ptoBank = nb; ptoLog('accrual', nb - old, 'Accrual for ' + longDate(p.date));
+  a.check = false; a.pending = null; commit();
+  toast(capped ? `You've reached the maximum PTO bank (${max} h).` : `Added ${f1(nb - old)} h PTO.`);
+}
+function dismissAccrual() { state.acc.pending = null; state.acc.check = false; save(); update(); }
+
+async function maintenance() {
+  if (maintBusy || modalCount > 0) return;
+  maintBusy = true;
+  try {
+    if (!state.user.hire || state.user.lunch == null) await setupDialog();
+    await newYearCheck();
+    if (!rolloverDeclined) await ensureCurrentWeek();
+    accrualMaintenance(); save(); update();
+  } finally { maintBusy = false; }
+}
+
+async function startClock() {
+  if (!state.user.hire) await setupDialog();
+  if (!(await ensureCurrentWeek())) { toast('Close out last week first (banner above).'); return; }
+  const n = new Date(), today = ymd(n), nm = n.getHours() * 60 + n.getMinutes(), d = state.week.days[n.getDay()];
+  const hol = Core.holidayOn(today, state.hol.edits);
+  if (hol && !d.hw) {
+    if (!(await confirmDlg(hol.name, `Today is <b>${esc(hol.name)}</b> (8 paid hours). Clock in anyway and count the hours you actually work?`, { ok: 'Clock in' }))) return;
+    d.hw = true;
+  }
+  if (d.in == null) { d.in = nm; d.out = nm; }
+  else if (d.out == null) d.out = nm;
+  else if (nm - d.out >= 10) {
+    const hrs = calcCIOHrs(d.out, nm), L = state.user.lunch;
+    const lunchGap = !d.wtl && L != null && d.out < L + 30 && nm > L;
+    const choice = await modal({
+      title: 'Resuming after a gap', dismiss: true,
+      body: `<p style="color:var(--tx)">The clock stopped at <b>${fmt12(d.out)}</b> and it's now <b>${fmt12(nm)}</b> — about <b>${f1(hrs)} h</b>.</p>
+        <p>${lunchGap ? 'This overlaps your lunch, which is deducted automatically — <b>Count as worked</b> is probably what you want.' : 'Were you away (appointment, errand)? Logging it as a break takes it off today\'s hours.'}</p>`,
+      actions: [{ label: 'Cancel', value: null, cls: 'ghost' },
+        { label: `Log as break (−${f1(hrs)} h)`, value: 'break', cls: lunchGap ? '' : 'pri' },
+        { label: 'Count as worked', value: 'work', cls: lunchGap ? 'pri' : '' }]
+    });
+    if (choice == null) return;
+    if (choice === 'break' && hrs > 0) { d.breaks.push({ out: d.out, in: nm, hrs }); d.lost = r1((d.lost || 0) + hrs); }
+    d.out = nm;
+  } else d.out = Math.max(d.out, nm);
+  running = true; runDate = today; commit();
+}
+function stopClock(msg) {
+  if (running && state.week.sunday === sundayOf(todayStr())) { const d = state.week.days[new Date().getDay()]; if (d.in != null) d.out = nowMinutes(); }
+  running = false; commit(); if (msg) toast(msg, 6000);
+}
+function tick() {
+  const n = new Date(), today = ymd(n);
+  if (running) {
+    if (runDate !== today) { running = false; toast('New day — the clock was paused. Press Clock in to start today.', 7000); }
+    else if (state.week.sunday === sundayOf(today)) {
+      const d = state.week.days[n.getDay()], nm = n.getHours() * 60 + n.getMinutes();
+      if (d.in != null && d.out !== nm) d.out = nm;
+      syncArchive();
+    }
+  }
+  save(); update();
+}
+
+async function breakDialog() {
+  const D = derive();
+  if (!D.td || D.td.d.in == null) { toast('Clock in first, then log a break.'); return; }
+  const d = D.td.d; let picked = null;
+  const list = () => d.breaks.length ? '<table class="mini"><thead><tr><th>Out</th><th>In</th><th>Hours</th><th></th></tr></thead><tbody>' +
+    d.breaks.map((b, i) => `<tr><td>${fmt12(b.out)}</td><td>${fmt12(b.in)}</td><td>${f1(b.hrs)}</td><td><button class="btn sm danger" data-rm="${i}">Remove</button></td></tr>`).join('') + '</tbody></table>' : '';
+  const body = `<p>Leave the clock running, then tell me when you were away — that time is taken off today's paid hours.<br><span class="dim">Don't log your normal lunch; it's deducted automatically.</span></p>
+    <label class="f">Clocked out at<input type="time" id="bk-out"></label>
+    <div class="radio"><input type="radio" name="bkm" id="bk-now" value="now" checked><label for="bk-now">Back in now (${fmt12(D.nm)})</label></div>
+    <div class="radio"><input type="radio" name="bkm" id="bk-at" value="at"><label for="bk-at">Clocked back in at</label><input type="time" id="bk-in" style="width:140px"></div>
+    <div id="bk-prev" class="muted" style="margin-top:10px"></div><div class="err" id="bk-err"></div><div id="bk-list">${list()}</div>`;
+  await modal({
+    title: 'Log a break', body, onOpen: (box) => {
+      const out = $('#bk-out', box), inn = $('#bk-in', box), prev = $('#bk-prev', box);
+      const calc = () => {
+        const o = toMin(out.value), i = $('#bk-now', box).checked ? D.nm : toMin(inn.value);
+        if (o == null || i == null) { prev.textContent = ''; return null; }
+        if (i <= o) { prev.textContent = ''; return null; }
+        const h = calcCIOHrs(o, i); prev.innerHTML = `<b style="color:var(--tx)">${f1(h)} h</b> will be subtracted.`; return { o, i, h };
+      };
+      box.addEventListener('input', calc); box.addEventListener('change', calc);
+      box.addEventListener('click', e => {
+        const rm = e.target.dataset && e.target.dataset.rm; if (rm == null) return;
+        const b = d.breaks.splice(+rm, 1)[0]; d.lost = Math.max(0, r1(d.lost - b.hrs)); commit(); $('#bk-list', box).innerHTML = list();
+      });
+      picked = calc;
+    },
+    actions: [{ label: 'Close', value: null, cls: 'ghost' }, {
+      label: 'Add break', value: 'ok', cls: 'pri', validate: box => {
+        const r = picked(), err = $('#bk-err', box);
+        if (!r) { err.textContent = 'Enter a clock-out time, and a clock-in time later than it.'; return false; }
+        if (r.o < d.in) { err.textContent = "Clock-out is before today's IN time."; return false; }
+        d.breaks.push({ out: r.o, in: r.i, hrs: r.h }); d.lost = r1((d.lost || 0) + r.h);
+      }
+    }]
+  });
+  commit();
+}
+
+async function ptoHistory() {
+  const rows = state.pto.slice().reverse().slice(0, 150).map(e => `<tr><td>${longDate(e.date)}</td><td>${esc(e.type)}</td><td class="${e.hrs < 0 ? 'neg' : 'pos'}">${e.hrs > 0 ? '+' : ''}${f1(e.hrs)}</td><td>${f1(e.bank)}</td><td>${esc(e.note)}</td></tr>`).join('');
+  await modal({
+    title: 'PTO history', wide: true,
+    body: rows ? `<table class="mini"><thead><tr><th>Date</th><th>Type</th><th>Hours</th><th>Bank</th><th>Note</th></tr></thead><tbody>${rows}</tbody></table>` : '<p>No PTO changes recorded yet. Accruals, PTO used for short weeks, floated holidays and manual edits show up here.</p>',
+    actions: [{ label: 'Close', value: true, cls: 'pri' }]
+  });
+}
+
+/* ======================================================================
+   Rendering
+   ====================================================================== */
+const setVal = (el, v) => { if (document.activeElement !== el && el.value !== String(v)) el.value = v; };
+function buildDays() {
+  const box = $('#days'); box.innerHTML = '';
+  for (let i = 0; i < 7; i++) {
+    const el = document.createElement('div'); el.className = 'day'; el.dataset.i = i;
+    el.innerHTML = `<div class="dh"><b>${DAYN[i]}</b><span class="dd"></span></div><div class="tag" hidden></div>
+      <label class="s">In<input type="time" class="fin"></label>
+      <label class="s">Out<input type="time" class="fout"></label>
+      <label class="switch" title="Working Through Lunch — no lunch deducted"><input type="checkbox" class="fwtl"> WTL</label>
+      <label class="s" title="Hours spent clocked out (multiple clock-ins) — subtracted from paid hours">Break (h)<input type="number" step="0.1" min="0" class="flost"></label>
+      <button class="hwbtn" hidden></button>
+      <div class="paid"><b class="num pv">–</b><small>paid</small></div>`;
+    box.appendChild(el);
+  }
+  box.addEventListener('change', e => {
+    const el = e.target, day = el.closest('.day'); if (!day) return;
+    const d = state.week.days[+day.dataset.i];
+    if (el.classList.contains('fin')) d.in = toMin(el.value);
+    else if (el.classList.contains('fout')) d.out = toMin(el.value);
+    else if (el.classList.contains('fwtl')) d.wtl = el.checked;
+    else if (el.classList.contains('flost')) d.lost = Math.max(0, parseFloat(el.value) || 0);
+    commit();
+  });
+  box.addEventListener('click', e => {
+    if (!e.target.classList.contains('hwbtn')) return;
+    const d = state.week.days[+e.target.closest('.day').dataset.i]; d.hw = !d.hw; commit();
+  });
+}
+
+function updateDays(D) {
+  const els = $$('.day', $('#days'));
+  D.days.forEach((x, i) => {
+    const el = els[i], isToday = D.cur && i === D.dow, d = x.d, locked = !!x.hol && !d.hw;
+    el.classList.toggle('today', isToday); el.classList.toggle('wkend', i === 0 || i === 6); el.classList.toggle('hol', locked);
+    $('.dd', el).textContent = shortDate(x.date);
+    const tag = $('.tag', el);
+    if (x.hol) { tag.hidden = false; tag.textContent = (d.hw ? 'Worked · ' : 'Holiday · ') + x.hol.name; } else tag.hidden = true;
+    const fin = $('.fin', el), fout = $('.fout', el), fw = $('.fwtl', el), fl = $('.flost', el);
+    setVal(fin, fromMin(d.in)); setVal(fout, fromMin(d.out));
+    fin.disabled = fout.disabled = fw.disabled = fl.disabled = locked;
+    fout.readOnly = isToday && running;
+    fout.classList.toggle('bad', x.kind === 'invalid');
+    fw.checked = !!d.wtl; setVal(fl, d.lost ? d.lost : '');
+    const hb = $('.hwbtn', el); hb.hidden = !x.hol; hb.textContent = d.hw ? 'Count as holiday' : 'I worked this day';
+    const pv = $('.pv', el); pv.textContent = x.paid != null ? x.paid.toFixed(1) : '–'; pv.classList.toggle('none', x.paid == null);
+  });
+}
+
+function update() {
+  const D = derive(), u = state.user, td = D.td;
+  // clock
+  const h = D.n.getHours(), ap = h >= 12 ? 'PM' : 'AM';
+  $('#clock').innerHTML = `${(h % 12) || 12}:${pad(D.n.getMinutes())}<small>:${pad(D.n.getSeconds())} ${ap}</small>`;
+  $('#dateLine').textContent = D.n.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const pill = $('#runPill'); pill.textContent = running ? 'Running' : 'Paused'; pill.classList.toggle('live', running);
+  const rb = $('#runBtn'); rb.classList.toggle('stop', running);
+  rb.textContent = running ? '■  Stop' : (td && td.d.in != null ? '▶  Resume' : '▶  Clock in');
+  // today
+  const inp = $('#inTime'), outp = $('#outTime');
+  inp.disabled = outp.disabled = !td; outp.readOnly = running;
+  setVal(inp, td ? fromMin(td.d.in) : ''); setVal(outp, td ? fromMin(td.d.out) : '');
+  $('#todayHrs').textContent = td && td.paid != null ? td.paid.toFixed(1) : '0.0';
+  $('#todayWtl').checked = !!(td && td.d.wtl); $('#todayWtl').disabled = !td;
+  const hasIn = td && td.d.in != null;
+  $('#dayBar>i').style.width = (hasIn ? D.prog * 100 : 0) + '%';
+  $('#dayBarL').textContent = hasIn ? 'Day progress' : 'Clock in to start today';
+  $('#dayBarR').textContent = hasIn && u.planDept != null ? 'Leave ' + fmt12(u.planDept) + ' · ' + Math.round(D.prog * 100) + '%' : '';
+  // targets
+  $('#fullOut').textContent = hasIn && D.full != null ? fmt12(D.full) : '—';
+  $('#fullOutH').textContent = hasIn && D.fullH != null ? f1(D.fullH) + ' h at that time' : (hasIn ? '' : 'Clock in first');
+  $('#evenOut').textContent = hasIn && D.even != null ? fmt12(D.even) : '—';
+  $('#evenOutH').textContent = hasIn ? (D.even != null ? f1(D.evenH) + ' h at that time' : 'On pace — leave any time') : 'Clock in first';
+  setVal($('#planDept'), fromMin(u.planDept)); $('#planWtl').checked = !!u.planWTL;
+  $('#planH').textContent = hasIn && D.planH != null ? `${f1(D.planH)} h today · week ${f1(r1(D.total - (td.paid || 0) + D.planH))}` : '';
+  // week
+  const sun = state.week.sunday || D.today;
+  $('#weekTitle').textContent = 'Week of ' + shortDate(sun) + ' – ' + shortDate(addDays(sun, 6)) + (D.cur ? '' : '  (not closed out)');
+  updateDays(D);
+  $('#wkTotal').textContent = D.total.toFixed(1);
+  $('#wkBar').style.width = Math.min(100, D.total / 40 * 100) + '%';
+  $('#wkTotalSub').textContent = `of 40 h · ${Math.round(Math.min(100, D.total / 40 * 100))}%`;
+  $('#wkRem').textContent = D.rem.toFixed(1);
+  const ah = $('#wkAhead'); ah.textContent = (D.ahead > 0 ? '+' : '') + D.ahead.toFixed(1); ah.className = 'v num ' + (D.ahead > 0 ? 'pos' : D.ahead < 0 ? 'neg' : 'neu');
+  $('#wkAheadSub').textContent = `vs. ${D.goal} h expected by end of ${DAYN[D.dow]}`;
+  const flo = Core.floatCheck(D.days, state.hol.banked), fm = $('#floatMsg');
+  fm.hidden = !(D.total >= 44 && flo.length); if (!fm.hidden) fm.textContent = `You have enough time to float the holiday (${flo.map(f => f.name).join(', ')}).`;
+  // PTO
+  setVal($('#ptoBank'), u.ptoBank != null ? u.ptoBank : '');
+  if (u.hire) {
+    const yrs = Core.serviceYears(u.hire, D.today), ann = Core.annualAccrual(yrs);
+    $('#nad').textContent = state.acc.date ? shortDate(state.acc.date) : '—';
+    $('#naa').textContent = state.acc.date ? state.acc.amt + ' h' : '—';
+    $('#maxAcc').textContent = Core.maxAccrual(ann) + ' h'; $('#svc').textContent = yrs + ' yrs · ' + ann + ' h';
+  }
+  $('#bnkHol').textContent = bankedCount(new Date().getFullYear());
+  updateBanners(D); paintSave();
+  if (activeTab === 'planner') updatePlanner(D);
+}
+
+let bannerSig = '';
+function updateBanners(D) {
+  const items = [];
+  if (!storageOK) items.push({ id: 'stor', cls: 'bad', text: "<b>Can't save to this browser</b> (storage is blocked, e.g. private window). Your data will be lost when you close the tab — export a backup from Settings.", acts: [] });
+  if (!D.cur && state.week.sunday && rolloverDeclined) items.push({ id: 'wk', cls: 'warn', text: `<b>Last week isn't closed out yet.</b> Review it to archive the hours and start the new week.`, acts: [{ label: 'Close out week', fn: () => { rolloverDeclined = false; maintenance(); }, cls: 'pri' }] });
+  const p = state.acc.pending;
+  if (p) items.push({ id: 'acc' + p.date, cls: 'info', text: `<b>PTO accrual ready:</b> ${p.amt} hours for ${longDate(p.date)}. Add it to your bank?`, acts: [{ label: 'Dismiss', fn: dismissAccrual }, { label: `Add ${p.amt} h`, fn: addAccrual, cls: 'pri' }] });
+  const sig = JSON.stringify(items.map(i => [i.id, i.text]));
+  if (sig === bannerSig) return; bannerSig = sig;
+  const box = $('#banners'); box.innerHTML = '';
+  items.forEach(it => {
+    const d = document.createElement('div'); d.className = 'banner ' + it.cls; d.innerHTML = `<p>${it.text}</p><div class="ba"></div>`;
+    it.acts.forEach(a => { const b = document.createElement('button'); b.className = 'btn sm ' + (a.cls || ''); b.textContent = a.label; b.onclick = a.fn; $('.ba', d).appendChild(b); });
+    box.appendChild(d);
+  });
+}
+
+/* ---------------- charts ---------------- */
+function lineChart(el, pts, opt) {
+  if (pts.length < 2) { el.innerHTML = '<p class="muted" style="margin:30px 0;text-align:center">Not enough data yet.</p>'; return; }
+  const W = 620, H = 220, m = { l: 40, r: 12, t: 12, b: 26 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const ys = pts.map(p => p.y); let lo = Math.min(...ys), hi = Math.max(...ys);
+  if (opt.ref != null) { lo = Math.min(lo, opt.ref); hi = Math.max(hi, opt.ref); }
+  if (hi - lo < 1) { const mid = (hi + lo) / 2; lo = mid - .5; hi = mid + .5; }
+  const span = (hi - lo) || 1; lo -= span * .08; hi += span * .08; if (opt.zero) lo = Math.min(0, lo);
+  const t0 = parse(pts[0].d).getTime(), t1 = parse(pts[pts.length - 1].d).getTime() || t0 + 1;
+  const X = d => m.l + (parse(d).getTime() - t0) / ((t1 - t0) || 1) * iw, Y = v => m.t + (1 - (v - lo) / (hi - lo)) * ih;
+  let g = '';
+  for (let i = 0; i <= 4; i++) { const v = lo + (hi - lo) * i / 4, y = Y(v); g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y}" y2="${y}"/><text x="${m.l - 7}" y="${y + 3.5}" text-anchor="end">${v.toFixed(opt.dec || 0)}</text>`; }
+  let lastLbl = '';
+  for (let i = 0; i <= 4; i++) { const t = new Date(t0 + (t1 - t0) * i / 4), lbl = (t.getMonth() + 1) + '/' + t.getDate() + '/' + String(t.getFullYear()).slice(2); if (lbl === lastLbl) continue; lastLbl = lbl; g += `<text x="${m.l + iw * i / 4}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === 4 ? 'end' : 'middle'}">${lbl}</text>`; }
+  const path = pts.map((p, i) => (i ? 'L' : 'M') + X(p.d).toFixed(1) + ' ' + Y(p.y).toFixed(1)).join('');
+  const id = 'g' + Math.random().toString(36).slice(2, 7);
+  el.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:${opt.color};stop-opacity:.28"/><stop offset="1" style="stop-color:${opt.color};stop-opacity:0"/></linearGradient></defs>
+    <g class="grid">${g}</g>${opt.ref != null ? `<line class="ref" x1="${m.l}" x2="${W - m.r}" y1="${Y(opt.ref)}" y2="${Y(opt.ref)}"/>` : ''}
+    <path d="${path}L${X(pts[pts.length - 1].d)} ${m.t + ih}L${X(pts[0].d)} ${m.t + ih}Z" fill="url(#${id})"/>
+    <path d="${path}" fill="none" style="stroke:${opt.color}" stroke-width="2" stroke-linejoin="round"/>
+    <circle r="4.5" style="fill:${opt.color};stroke:var(--surface)" stroke-width="2" display="none" class="dot"/><rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" class="hit"/></svg>`;
+  const svg = $('svg', el), hit = $('.hit', el), dot = $('.dot', el);
+  let tt = null;
+  hit.addEventListener('mousemove', e => {
+    const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W;
+    let best = 0, bd = 1e9; pts.forEach((p, i) => { const dd = Math.abs(X(p.d) - x); if (dd < bd) { bd = dd; best = i; } });
+    const p = pts[best]; dot.setAttribute('display', ''); dot.setAttribute('cx', X(p.d)); dot.setAttribute('cy', Y(p.y));
+    if (!tt) { tt = document.createElement('div'); tt.className = 'tt'; document.body.appendChild(tt); }
+    tt.textContent = `${longDate(p.d)} · ${p.y.toFixed(opt.dec || 0)}${opt.unit || ''}`; tt.style.left = e.clientX + 14 + 'px'; tt.style.top = e.clientY - 34 + 'px';
+  });
+  hit.addEventListener('mouseleave', () => { dot.setAttribute('display', 'none'); if (tt) { tt.remove(); tt = null; } });
+}
+
+/* ---------------- archive tab ---------------- */
+let arcLimit = 100;
+function renderArchive() {
+  const a = state.archive, hrs = a.filter(e => typeof e.hrs === 'number');
+  const avg = hrs.length ? hrs.reduce((s, e) => s + e.hrs, 0) / hrs.length : null;
+  const sd = hrs.length > 1 ? Math.sqrt(hrs.reduce((s, e) => s + (e.hrs - avg) ** 2, 0) / (hrs.length - 1)) : null;
+  const weeks = {}; hrs.forEach(e => { const w = sundayOf(e.date); weeks[w] = (weeks[w] || 0) + e.hrs; });
+  const wv = Object.values(weeks);
+  $('#stDays').textContent = a.length;
+  $('#stAvg').textContent = avg != null ? (Math.floor(avg * 1000) / 1000).toFixed(2) : '—';
+  $('#stSd').textContent = sd != null ? sd.toFixed(2) : '—';
+  $('#stWk').textContent = wv.length ? (wv.reduce((s, v) => s + v, 0) / wv.length).toFixed(1) : '—';
+  const n = +$('#chartRange').value;
+  let hp = hrs.map(e => ({ d: e.date, y: e.hrs })), pp = a.filter(e => typeof e.pto === 'number').map(e => ({ d: e.date, y: e.pto }));
+  if (n) { hp = hp.slice(-n); pp = pp.slice(-n); }
+  lineChart($('#chHours'), hp, { ref: 8, color: 'var(--accent)', dec: 1, unit: ' h', zero: true });
+  lineChart($('#chPto'), pp, { color: 'var(--fg)', dec: 1, unit: ' h PTO' });
+  const tb = $('#arcTbl tbody'); tb.innerHTML = '';
+  const rows = a.slice().reverse(), show = rows.slice(0, arcLimit);
+  show.forEach(e => {
+    const tr = document.createElement('tr'); tr.dataset.d = e.date;
+    tr.innerHTML = `<td><input type="date" value="${e.date}" data-k="date"></td><td><input type="time" value="${fromMin(e.in)}" data-k="in"></td><td><input type="time" value="${fromMin(e.out)}" data-k="out"></td>
+      <td class="r"><input type="number" step="0.1" value="${e.hrs == null ? '' : e.hrs}" data-k="hrs" style="text-align:right"></td><td class="r"><input type="number" step="0.1" value="${e.pto == null ? '' : e.pto}" data-k="pto" style="text-align:right"></td>
+      <td class="r"><button class="btn sm ghost" data-del title="Delete this row">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+  $('#arcMore').hidden = rows.length <= arcLimit; $('#arcCount').textContent = rows.length ? `Showing ${show.length} of ${rows.length}` : 'No days archived yet — they appear here automatically as you track.';
+}
+function wireArchive() {
+  $('#arcTbl tbody').addEventListener('change', e => {
+    const tr = e.target.closest('tr'), k = e.target.dataset.k; if (!tr || !k) return;
+    const i = state.archive.findIndex(x => x.date === tr.dataset.d); if (i < 0) return;
+    const row = state.archive[i];
+    if (k === 'date') {
+      if (!e.target.value || (state.archive.some(x => x.date === e.target.value))) { toast('That date is empty or already exists.'); e.target.value = row.date; return; }
+      row.date = e.target.value; normalize(); save(); renderArchive(); return;
+    }
+    if (k === 'in' || k === 'out') row[k] = toMin(e.target.value);
+    else row[k] = e.target.value === '' ? null : parseFloat(e.target.value);
+    save(); renderArchive();
+  });
+  $('#arcTbl tbody').addEventListener('click', async e => {
+    if (!e.target.hasAttribute('data-del')) return;
+    const d = e.target.closest('tr').dataset.d;
+    if (await confirmDlg('Delete row', `Remove ${longDate(d)} from the archive?`, { ok: 'Delete', danger: true })) { state.archive = state.archive.filter(x => x.date !== d); save(); renderArchive(); }
+  });
+  $('#arcMore').onclick = () => { arcLimit += 200; renderArchive(); };
+  $('#chartRange').onchange = renderArchive;
+  $('#arcAdd').onclick = async () => {
+    let row = null;
+    await modal({
+      title: 'Add a day', body: `<label class="f">Date<input type="date" id="ad-d" value="${todayStr()}"></label><div class="two"><label>In<input type="time" id="ad-in"></label><label>Out<input type="time" id="ad-out"></label></div>
+      <label class="f">Hours <span class="dim">(leave empty to calculate from in/out)</span><input type="number" step="0.1" id="ad-h"></label><label class="f">PTO bank<input type="number" step="0.1" id="ad-p" value="${state.user.ptoBank != null ? state.user.ptoBank : ''}"></label><div class="err" id="ad-e"></div>`,
+      actions: [{ label: 'Cancel', value: null, cls: 'ghost' }, {
+        label: 'Add', value: 1, cls: 'pri', validate: b => {
+          const d = $('#ad-d', b).value, i = toMin($('#ad-in', b).value), o = toMin($('#ad-out', b).value); let h = $('#ad-h', b).value, p = $('#ad-p', b).value;
+          if (!d) { $('#ad-e', b).textContent = 'Pick a date.'; return false; }
+          h = h === '' ? (i != null && o != null && o >= i ? r1(calcHrs(i, o, false, state.user.lunch) - 0) : null) : parseFloat(h);
+          row = { date: d, in: i, out: o, hrs: h, pto: p === '' ? null : parseFloat(p) };
+        }
+      }]
+    });
+    if (row) { const i = state.archive.findIndex(x => x.date === row.date); if (i >= 0) state.archive[i] = row; else { state.archive.push(row); normalize(); } save(); renderArchive(); }
+  };
+  $('#arcExport').onclick = () => {
+    const csv = 'Date,In,Out,Hours,PTO\n' + state.archive.map(e => [e.date, fromMin(e.in), fromMin(e.out), e.hrs == null ? '' : e.hrs, e.pto == null ? '' : e.pto].join(',')).join('\n');
+    download('timesheet-archive-' + todayStr() + '.csv', csv, 'text/csv');
+  };
+  $('#arcImport').onclick = async () => {
+    let parsed = [];
+    await modal({
+      title: 'Import archive', wide: true,
+      body: `<p>Paste rows (copy them straight from Excel or a CSV). Columns: <b>Date, In, Out, Hours, PTO</b>. Existing dates are replaced.</p><textarea id="im-t" rows="9" placeholder="8/15/2022&#9;7:42 AM&#9;4:20 PM&#9;8.6&#9;19.2"></textarea><div class="muted" id="im-s" style="margin-top:8px"></div>`,
+      onOpen: b => { $('#im-t', b).addEventListener('input', () => { parsed = parseImport($('#im-t', b).value); $('#im-s', b).textContent = parsed.length ? parsed.length + ' rows recognised' : ''; }); },
+      actions: [{ label: 'Cancel', value: null, cls: 'ghost' }, { label: 'Import', value: 1, cls: 'pri', validate: () => { if (!parsed.length) { toast('Nothing to import yet.'); return false; } } }]
+    }).then(v => { if (v) { parsed.forEach(r => { const i = state.archive.findIndex(x => x.date === r.date); if (i >= 0) state.archive[i] = r; else state.archive.push(r); }); normalize(); save(); renderArchive(); toast(`Imported ${parsed.length} rows.`); } });
+  };
+}
+function parseTimeLoose(s) {
+  s = String(s == null ? '' : s).trim(); if (!s) return null;
+  let m = /^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp])?\.?[Mm]?\.?$/.exec(s);
+  if (m) { let h = +m[1]; if (m[3]) { h %= 12; if (/p/i.test(m[3])) h += 12; } return h * 60 + +m[2]; }
+  const f = parseFloat(s); if (!isNaN(f) && f > 0 && f < 1) return Math.round(f * 1440);
+  return null;
+}
+function parseDateLoose(s) {
+  s = String(s || '').trim(); let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s); if (m) return ymd(new Date(+m[1], m[2] - 1, +m[3]));
+  m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(s); if (m) { let y = +m[3]; if (y < 100) y += 2000; return ymd(new Date(y, m[1] - 1, +m[2])); }
+  const n = parseFloat(s); if (n > 20000 && n < 80000) return ymd(new Date(1899, 11, 30 + Math.floor(n)));
+  return null;
+}
+function parseImport(text) {
+  const out = [];
+  text.split(/\r?\n/).forEach(line => {
+    if (!line.trim()) return; const c = line.includes('\t') ? line.split('\t') : line.split(',');
+    const d = parseDateLoose(c[0]); if (!d) return;
+    const num = x => { const f = parseFloat(x); return isNaN(f) ? null : f; };
+    out.push({ date: d, in: parseTimeLoose(c[1]), out: parseTimeLoose(c[2]), hrs: num(c[3]), pto: num(c[4]) });
+  });
+  return out;
+}
+function download(name, text, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+/* ---------------- planner tab ---------------- */
+function buildPlanner() {
+  const tb = $('#plTbl tbody'); tb.innerHTML = '';
+  ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach((n, i) => {
+    const tr = document.createElement('tr'); tr.dataset.i = i;
+    tr.innerHTML = `<td><b>${n}</b></td><td class="r num act">—</td><td>${i < 4 ? `<input type="number" step="0.1" min="0" class="psch" style="width:110px">` : '<span class="num frisch muted"></span>'}</td>
+      <td><input type="time" class="pcome" style="width:140px"></td><td class="r num lv">—</td>`;
+    tb.appendChild(tr);
+  });
+  tb.addEventListener('change', e => {
+    const tr = e.target.closest('tr'), i = +tr.dataset.i, pl = state.planner;
+    if (e.target.classList.contains('psch')) pl.sched[i] = Math.max(0, parseFloat(e.target.value) || 0);
+    if (e.target.classList.contains('pcome')) pl.coming[i] = toMin(e.target.value);
+    save(); updatePlanner();
+  });
+  $('#plTarget').onchange = e => { state.planner.target = parseFloat(e.target.value) || 40; save(); updatePlanner(); };
+  $('#plWtl').onchange = e => { state.planner.wtl = e.target.checked; save(); updatePlanner(); };
+}
+function updatePlanner(D) {
+  D = D || derive(); const pl = state.planner, L = state.user.lunch;
+  const sum4 = r1(pl.sched.slice(0, 4).reduce((s, v) => s + v, 0)), fri = r1(pl.target - sum4);
+  $$('#plTbl tbody tr').forEach((tr, i) => {
+    const day = D.days[i + 1];
+    $('.act', tr).textContent = day && day.paid != null ? f1(day.paid) : '—';
+    const sch = i < 4 ? pl.sched[i] : fri;
+    if (i < 4) setVal($('.psch', tr), sch); else $('.frisch', tr).textContent = (fri > 0 ? f1(fri) : '0.0') + ' (remaining)';
+    setVal($('.pcome', tr), fromMin(pl.coming[i]));
+    const lv = pl.coming[i] != null && sch > 0 ? calcMinTime(pl.coming[i], sch, pl.wtl, L) : null;
+    $('.lv', tr).innerHTML = lv != null ? `<b>${fmt12(lv)}</b>` : '—';
+  });
+  setVal($('#plTarget'), pl.target); $('#plWtl').checked = !!pl.wtl;
+  $('#plSum').textContent = `Mon–Thu scheduled: ${f1(sum4)} h`;
+}
+
+/* ---------------- holidays tab ---------------- */
+let holYear = new Date().getFullYear();
+function buildHolidays() {
+  const sel = $('#holYear'), y0 = new Date().getFullYear();
+  sel.innerHTML = ''; for (let y = y0 - 1; y <= y0 + 6; y++) sel.innerHTML += `<option ${y === holYear ? 'selected' : ''}>${y}</option>`;
+  sel.onchange = () => { holYear = +sel.value; renderHolidays(); };
+  $('#holReset').onclick = async () => { if (await confirmDlg('Reset year', `Restore the default ${holYear} holiday dates and clear banked flags?`, { ok: 'Reset' })) { delete state.hol.edits[holYear]; delete state.hol.banked[holYear]; save(); renderHolidays(); update(); } };
+  $('#holTbl tbody').addEventListener('change', e => {
+    const tr = e.target.closest('tr'), key = tr.dataset.k, y = holYear;
+    if (e.target.dataset.f === 'bank') { (state.hol.banked[y] = state.hol.banked[y] || {})[key] = e.target.checked; }
+    else {
+      const s = $('[data-f=start]', tr).value, en = $('[data-f=end]', tr).value;
+      if (!s) return; const fin = en && en >= s ? en : s;
+      (state.hol.edits[y] = state.hol.edits[y] || {})[key] = [s, fin]; $('[data-f=end]', tr).value = fin;
+    }
+    save(); holNote(); update();
+  });
+}
+function holNote() {
+  const hs = Core.holidaysFor(holYear, state.hol.edits), wk = hs.filter(h => [0, 6].includes(parse(h.start).getDay()));
+  $('#holNote').innerHTML = `Banked: <b style="color:var(--tx)">${bankedCount(holYear)}</b> of ${Core.HOLS.filter(h => h[2]).length}.` +
+    (wk.length ? `<br><span class="warnnote">⚠ ${wk.map(h => esc(h.name)).join(', ')} falls on a weekend — change the date if your company observes it on another day.</span>` : '');
+}
+function renderHolidays() {
+  const tb = $('#holTbl tbody'); tb.innerHTML = '';
+  Core.holidaysFor(holYear, state.hol.edits).forEach(h => {
+    const b = ((state.hol.banked[holYear]) || {})[h.key], tr = document.createElement('tr'); tr.dataset.k = h.key;
+    tr.innerHTML = `<td><b>${esc(h.name)}</b>${h.edited ? ' <span class="dim">(edited)</span>' : ''}</td><td><input type="date" data-f="start" value="${h.start}"></td><td><input type="date" data-f="end" value="${h.end}"></td>
+      <td>${h.floatable ? '✓' : '<span class="dim">—</span>'}</td><td>${h.floatable ? `<span class="switch"><input type="checkbox" data-f="bank" ${b ? 'checked' : ''}></span>` : ''}</td>`;
+    tb.appendChild(tr);
+  });
+  holNote();
+}
+
+/* ---------------- settings tab ---------------- */
+function renderSettings() {
+  const u = state.user; setVal($('#sHire'), u.hire || ''); setVal($('#sLunch'), fromMin(u.lunch)); $('#sAuto').checked = !!u.autoStart;
+  $('#lastBackup').textContent = state.lastBackup ? 'Last backup exported on ' + longDate(state.lastBackup) + '.' : 'No backup exported yet.';
+}
+function wireSettings() {
+  $('#sHire').onchange = e => { if (e.target.value > todayStr()) { toast('Start date is in the future.'); e.target.value = state.user.hire || ''; return; } state.user.hire = e.target.value || null; accrualMaintenance(); save(); update(); };
+  $('#sLunch').onchange = e => { const m = toMin(e.target.value); if (m == null) { e.target.value = fromMin(state.user.lunch); return; } state.user.lunch = m; commit(); };
+  $('#sAuto').onchange = e => { state.user.autoStart = e.target.checked; save(); };
+  $('#bkExport').onclick = () => { download('timesheet-backup-' + todayStr() + '.json', JSON.stringify(state, null, 1), 'application/json'); state.lastBackup = todayStr(); save(); renderSettings(); toast('Backup downloaded.'); };
+  $('#bkImport').onclick = () => $('#bkFile').click();
+  $('#bkFile').onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try {
+      const obj = JSON.parse(await f.text()); if (!obj || !obj.user || !obj.week) throw 0;
+      if (!(await confirmDlg('Restore backup', 'This replaces everything currently in the sheet with the backup file.', { ok: 'Restore', danger: true }))) return;
+      state = merge(defaults(), obj); normalize(); running = false; save(); fullRender(); toast('Backup restored.');
+    } catch (_) { toast("That file isn't a valid TimeSheet backup."); }
+  };
+  $('#clrArchive').onclick = async () => { if (await confirmDlg('Clear archive', 'Delete every archived day? This cannot be undone (export a CSV first if unsure).', { ok: 'Clear archive', danger: true })) { state.archive = []; save(); toast('Archive cleared.'); } };
+  $('#resetAll').onclick = async () => {
+    if (await confirmDlg('Reset everything', 'This erases your log, archive, PTO bank, holidays and settings from this browser and starts fresh.', { ok: 'Erase everything', danger: true })) {
+      running = false; state = defaults(); normalize(); lastSaved = null; save(); fullRender(); maintenance();
+    }
+  };
+}
+
+/* ---------------- wiring ---------------- */
+function showTab(t) {
+  activeTab = t; $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === t)); $$('.tab').forEach(s => s.classList.toggle('on', s.id === 'tab-' + t));
+  if (t === 'archive') renderArchive(); if (t === 'planner') updatePlanner(); if (t === 'holidays') renderHolidays(); if (t === 'settings') renderSettings();
+}
+function fullRender() { bannerSig = ''; update(); showTab(activeTab); }
+function wire() {
+  $('#nav').addEventListener('click', e => { if (e.target.dataset.tab) showTab(e.target.dataset.tab); });
+  $('#runBtn').onclick = () => running ? stopClock() : startClock();
+  $('#breakBtn').onclick = breakDialog;
+  $('#ptoHist').onclick = ptoHistory;
+  $('#bnkHol').onclick = () => { holYear = new Date().getFullYear(); buildHolidays(); showTab('holidays'); };
+  const td = () => state.week.days[new Date().getDay()];
+  const onCur = () => state.week.sunday === sundayOf(todayStr());
+  $('#inTime').onchange = e => { if (onCur()) { td().in = toMin(e.target.value); commit(); } };
+  $('#outTime').onchange = e => { if (onCur()) { td().out = toMin(e.target.value); commit(); } };
+  $('#todayWtl').onchange = e => { if (onCur()) { td().wtl = e.target.checked; commit(); } };
+  $('#planDept').onchange = e => { const m = toMin(e.target.value); if (m != null) { state.user.planDept = m; commit(); } };
+  $('#planWtl').onchange = e => { state.user.planWTL = e.target.checked; commit(); };
+  $('#ptoBank').onchange = e => {
+    const old = state.user.ptoBank, v = e.target.value === '' ? null : parseFloat(e.target.value);
+    state.user.ptoBank = v == null || isNaN(v) ? null : v;
+    if (old != null && state.user.ptoBank != null && old !== state.user.ptoBank) ptoLog('adjust', state.user.ptoBank - old, 'Edited manually');
+    else if (old == null && state.user.ptoBank != null) ptoLog('adjust', 0, 'Starting balance');
+    accrualMaintenance(); commit();
+  };
+  wireArchive(); buildPlanner(); buildHolidays(); wireSettings();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); maintenance(); } });
+}
+
+(function init() {
+  buildDays(); wire(); paintSave(); update();
+  setInterval(tick, 1000);
+  setInterval(() => { maintenance(); if (activeTab === 'archive' && !(document.activeElement && document.activeElement.closest('#arcTbl'))) renderArchive(); }, 30000);
+  maintenance().then(() => { if (state.user.autoStart && !running && !modalCount) startClock(); });
+  // sync across devices when signed in (pages/sync.js); localStorage stays the offline copy
+  if (window.PageSync) PageSync.init({
+    page: 'timesheet', mount: $('#sync'), initial: () => state,
+    onData: d => {
+      if (!d || !d.user || !d.week) return;
+      state = merge(defaults(), d); normalize();
+      lastSaved = JSON.stringify(state);
+      try { localStorage.setItem(KEY, lastSaved); } catch (_) { }
+      fullRender();
+    }
+  });
+})();
+
+</script>
+</body>
+</html>

@@ -15,6 +15,7 @@
   --done:#a1a1a6;
   --good:#248a3d; --good-soft:#e6f4ea;
   --bad:#d70015;  --bad-soft:#fde7e9;
+  --warn:#b25000; --warn-soft:#fff4e5;  /* holidays, notices */
   --display:-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --body:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --mono:var(--body);
@@ -27,12 +28,14 @@
   --accent:#2997ff; --accent-soft:#0d2a47; --on-accent:#ffffff;
   --tomato:#a1a1a6; --done:#6e6e73;
   --good:#30d158; --good-soft:#0f2e1a; --bad:#ff453a; --bad-soft:#3b1211;
+  --warn:#ff9f0a; --warn-soft:#33240d;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#000000; --surface:#1c1c1e; --fg:#f5f5f7; --muted:#a1a1a6; --line:#38383a;
   --accent:#2997ff; --accent-soft:#0d2a47; --on-accent:#ffffff;
   --tomato:#a1a1a6; --done:#6e6e73;
   --good:#30d158; --good-soft:#0f2e1a; --bad:#ff453a; --bad-soft:#3b1211;
+  --warn:#ff9f0a; --warn-soft:#33240d;
   color-scheme:dark}
 :root[data-theme="light"]{color-scheme:light}
 

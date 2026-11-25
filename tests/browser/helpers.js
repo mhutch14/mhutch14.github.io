@@ -76,6 +76,6 @@ function hasSideScroll(page) {
 }
 
 const PHONE = { width: 390, height: 844 };
-const PAGES = ["/", "/resume/", "/pages/", "/pages/budget.html", "/pages/meal-plan.html"];
+const PAGES = ["/", "/resume/", "/pages/", "/pages/budget.html", "/pages/meal-plan.html", "/pages/timesheet.html"];
 
 module.exports = { ROOT, startServer, launch, openPage, fakeSupabase, hasSideScroll, PHONE, PAGES };

@@ -8,7 +8,7 @@ let server, browser;
 test.before(async () => { server = await startServer(); browser = await launch(); });
 test.after(async () => { await browser?.close(); await server?.close(); });
 
-const SECTION = { "/": "Home", "/resume/": "Resume", "/pages/": "Tools", "/pages/budget.html": "Tools", "/pages/meal-plan.html": "Tools" };
+const SECTION = { "/": "Home", "/resume/": "Resume", "/pages/": "Tools", "/pages/budget.html": "Tools", "/pages/meal-plan.html": "Tools", "/pages/timesheet.html": "Tools" };
 
 for (const path of PAGES) {
   test(`${path} loads without errors, has a title, nav and footer`, async () => {
@@ -38,7 +38,7 @@ test("home leads with the site name and tools; the resume keeps Mark's name", as
   const page = await openPage(browser, server.url);
   await page.goto(server.url + "/");
   assert.equal(await page.locator("h1").innerText(), "Odds & Ends");
-  assert.deepEqual(await page.locator(".tools a.card b").allInnerTexts(), ["Ledger", "Mise"]);
+  assert.deepEqual(await page.locator(".tools a.card b").allInnerTexts(), ["TimeSheet", "Ledger", "Mise"]);
   assert.ok(await page.locator('.about a[href="/resume/"]').count(), "about section links to the resume");
   await page.goto(server.url + "/resume/");
   assert.equal(await page.locator("h1").innerText(), "Mark Hutchinson");

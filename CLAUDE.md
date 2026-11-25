@@ -1,6 +1,6 @@
 # mhutch14.github.io
 
-Mark's personal website, "Odds & Ends", served by GitHub Pages from the `master` branch at https://mhutch14.github.io. It's mainly day-to-day life tools, each with a short name (Ledger = budget, Mise = meal plan), plus a resume section. Mark's name is the heading only on the resume page; the nav brand and home heading are "Odds & Ends".
+Mark's personal website, "Odds & Ends", served by GitHub Pages from the `master` branch at https://mhutch14.github.io. It's mainly day-to-day life tools, each with a short name (TimeSheet = work hours & PTO, Ledger = budget, Mise = meal plan), plus a resume section. Mark's name is the heading only on the resume page; the nav brand and home heading are "Odds & Ends".
 
 ## Site map
 
@@ -9,7 +9,7 @@ Mark's personal website, "Odds & Ends", served by GitHub Pages from the `master`
 | `/` | `index.html` | Home: site name, tool cards, short About with resume link |
 | `/resume/` | `resume/index.html` | Full resume (has a print / save-as-PDF button) |
 | `/pages/` | `pages/index.html` | "Tools" hub: list of tool pages |
-| `/pages/<name>.html` | `pages/<name>.html` | One life tool per file (meal plan, budget, ...) |
+| `/pages/<name>.html` | `pages/<name>.html` | One life tool per file (timesheet, budget, meal plan, ...) |
 
 README.md has the full file list, how-to-use guide and design notes. Keep it current when you add or change pages.
 

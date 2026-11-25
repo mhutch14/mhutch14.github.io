@@ -1,6 +1,6 @@
 # mhutch14.github.io
 
-**Odds & Ends**, Mark Hutchinson's personal website: a set of **life tools** for day-to-day planning, like a monthly budget (**Ledger**) and a weekly meal plan with a grocery checklist (**Mise**), plus an online **resume**. Tool data can sync between phone and laptop.
+**Odds & Ends**, Mark Hutchinson's personal website: a set of **life tools** for day-to-day planning, like a work time sheet (**TimeSheet**), a monthly budget (**Ledger**) and a weekly meal plan with a grocery checklist (**Mise**), plus an online **resume**. Tool data can sync between phone and laptop.
 
 **Live site: https://mhutch14.github.io**
 
@@ -9,6 +9,7 @@
 | Home | https://mhutch14.github.io/ |
 | Resume | https://mhutch14.github.io/resume/ |
 | Tools | https://mhutch14.github.io/pages/ |
+| TimeSheet (weekly hours & PTO) | https://mhutch14.github.io/pages/timesheet.html |
 | Ledger (monthly budget) | https://mhutch14.github.io/pages/budget.html |
 | Mise (weekly meal plan) | https://mhutch14.github.io/pages/meal-plan.html |
 
@@ -19,12 +20,22 @@
 ### Everywhere
 - **Menu:** Home, Tools and Resume are at the top of every page.
 - **Light / dark:** the round button at the end of the menu cycles **Auto** (follows your device), **Light** and **Dark**. Each browser remembers your choice.
-- **Syncing between devices:** the meal plan and the budget each have a **"Sign in to sync"** box. Enter your email and tap **Email me a code**. Then either type the code from the email into the page (handy when you read email on your phone but want to sign in on another computer), or open the link in the email *on the same device*. That browser stays signed in. Changes then save to your account and show up on your other signed-in devices when you open or switch back to the page. Signed out or offline, each page still works and saves to that device only.
+- **Syncing between devices:** TimeSheet, Ledger and Mise each have a **"Sign in to sync"** box. Enter your email and tap **Email me a code**. Then either type the code from the email into the page (handy when you read email on your phone but want to sign in on another computer), or open the link in the email *on the same device*. That browser stays signed in. Changes then save to your account and show up on your other signed-in devices when you open or switch back to the page. Signed out or offline, each page still works and saves to that device only.
 - **Seeing an old version?** Browsers can keep a page for up to 10 minutes. Force a refresh with **Ctrl+Shift+R** (**Cmd+Shift+R** on a Mac), or open the page in a new tab on a phone.
 
 ### Resume
 - Shows experience, education, skills and contact links (email, GitHub, LinkedIn).
 - **Print or save as PDF** opens your browser's print dialog with a clean, print-friendly layout.
+
+### TimeSheet (weekly hours & PTO)
+Ported from Mark's Excel time-sheet workbook. Hours are counted in tenths of an hour (6-minute units) with the workbook's rounding.
+- **First visit:** enter your start (hire) date, lunch start and (optionally) PTO balance, or tap *Use defaults*.
+- **Dashboard:** **Clock in** stamps today's In time and keeps Out at the current time until you tap **Stop**. Resuming after a gap offers to log it as a break. **WTL** (working through lunch) skips the 30-minute lunch deduction. Every day's In/Out, WTL and break hours can be edited.
+- **Week:** total, remaining to 40, and ahead/behind an 8-hour-a-day pace. Holidays fill in as 8 paid hours (tap *I worked this day* to count real hours instead).
+- **Clock-out targets:** when you reach 8.0 hours today, the earliest you can leave and stay on pace, and the hours you'd have at a planned time.
+- **PTO:** your bank, next accrual date and amount (by years of service), max bank and history. When an accrual date passes, a banner asks before adding it.
+- **New week:** on Sunday the last week is archived; if it's under 40 hours you're asked whether to cover it with PTO. A floatable holiday in a week with 44+ paid hours is banked.
+- **Archive, Planner, Holidays, Settings** tabs: daily history with charts and CSV import/export; a Mon–Fri schedule planner; editable holiday dates per year; backup/restore and reset.
 
 ### Ledger (monthly budget)
 - **Month:** use the ← and → arrows to move between months. Each month keeps its own paid bills and spending.
@@ -78,7 +89,7 @@ Modeled on modern product sites like apple.com: light gray and white (true black
 - The resume leaves out phone number, street address and security clearance on purpose. The email address is assembled by script so it isn't in the HTML for scrapers.
 
 ### Sync design (`pages/sync.js`)
-- One table, `public.page_state (user_id, page, data jsonb, updated_at)`, with one row per user per page (`"budget"`, `"meal-plan"`). The setup SQL is in `supabase/setup.sql`.
+- One table, `public.page_state (user_id, page, data jsonb, updated_at)`, with one row per user per page (`"budget"`, `"meal-plan"`, `"timesheet"`). The setup SQL is in `supabase/setup.sql`.
 - Sign-in uses an email one-time code (typed into the page with `verifyOtp`) or the magic link in the same email. Supabase must allow `https://mhutch14.github.io/pages/**` as a redirect URL.
 - On sign-in, the page loads the saved row. If none exists yet, it uploads what the device already has. After that, every change is saved (debounced, 0.6 seconds) and the page reloads the row whenever you switch back to the tab.
 - If the sign-in library can't load, the page shows a short notice and keeps working locally.
@@ -95,13 +106,16 @@ pages/budget.html           Monthly budget page (UI and events)
 pages/budget-core.js        Budget logic with no DOM access: parsing, money format, due-date status,
                             totals, import checks, example data. Used by the page and the unit tests.
 pages/meal-plan.html        Weekly meal plan, recipes and grocery checklist
+pages/timesheet.html        TimeSheet: clock in/out, week, targets, PTO, archive, planner, holidays (UI and flows)
+pages/timesheet-core.js     TimeSheet logic with no DOM access: hour rounding, lunch, targets, PTO accrual,
+                            holidays, floating. Used by the page and the unit tests.
 pages/sync.js               Shared sign-in + save/load helper for any tool page (Supabase)
 pages/vendor/supabase-2.119.0.js   Supabase browser library, served from this site (not a CDN)
                                    so ad blockers and CDN outages don't break sign-in
 assets/site.css             Shared theme: color tokens (light + dark), type, nav, cards, buttons, footer
 assets/theme.js             Auto / Light / Dark switch; adds itself to the nav, applies before paint
 supabase/setup.sql          Creates the page_state table and its row-level security rules (run once)
-tests/unit/                 Unit tests for budget-core.js (Node's built-in test runner)
+tests/unit/                 Unit tests for budget-core.js and timesheet-core.js (Node's built-in test runner)
 tests/browser/              Browser tests for every page (Playwright + Chromium)
 tests/browser/fixtures/     Sample budget file used by the tests (fake numbers)
 tests/serve.js              Local preview server: npm run serve
@@ -141,8 +155,8 @@ npm run test:all
 ```
 
 What's covered:
-- **Unit tests (17):** number parsing, money formatting, due-date status (late, today, soon, later, short months), totals, progress bars, adding purchases without rounding drift, and import checking (valid files, bad files, trimming, clamping).
-- **Browser tests (40):**
+- **Unit tests (28):** TimeSheet hours (lunch, WTL, tenths, breaks, holidays), clock-out times, PTO accrual dates and amounts, holiday dates and floating; budget number parsing, money formatting, due-date status (late, today, soon, later, short months), totals, progress bars, adding purchases without rounding drift, and import checking (valid files, bad files, trimming, clamping).
+- **Browser tests (49):**
   - Every page loads with no errors and has the shared nav and footer.
   - The home page leads with "Odds & Ends" and the tools; the resume keeps Mark's name as its heading.
   - Every page fits a phone screen in dark mode.
@@ -151,6 +165,7 @@ What's covered:
   - The resume shows no private details, and the email isn't in the HTML source.
   - Budget: import (including bad files and confirmation), past months, the add-purchase bar, set total and over-plan, paid-bill grouping, collapse remembered after reload, edit mode, take-home pay entry, clear month, and phone layout.
   - Meal plan: checklist, hide pantry, copy list, uncheck all.
+  - TimeSheet: first-visit setup, week totals and pace, clock in and reload, editing days and WTL, tabs and archive, phone layout, and sync as page "timesheet".
   - Sync, with a fake Supabase: sign-in email, signing in with the emailed code (and a wrong code), loading saved data, the first upload, sign out, and the offline fallback.
 
 The browser tests never contact the real Supabase project.
