@@ -135,9 +135,140 @@ const TimeCore = (() => {
     return out;
   }
 
+  const shortDate = s => { const d = parse(s); return (d.getMonth() + 1) + '/' + d.getDate(); };
+
+  /* ---- saved state ---- */
+  function defaultState() {
+    return {
+      v: 1,
+      user: { hire: null, lunch: 660, ptoBank: null, planWTL: true, planDept: 960, autoStart: false, wtlDefault: false },
+      week: { sunday: null, days: Array.from({ length: 7 }, () => blankDay()) },
+      acc: { date: null, amt: 0, check: true, pending: null },
+      hol: { edits: {}, banked: {} },
+      archive: [], pto: [],
+      planner: { sched: [8, 8, 8, 8], coming: [420, 420, 420, 420, 420], target: 40.1, wtl: false },
+      lastYear: null, lastBackup: null
+    };
+  }
+  const isObj = x => x && typeof x === 'object' && !Array.isArray(x);
+  // fill in anything missing from a saved/backup state with defaults, keeping unknown keys
+  function mergeState(def, src) {
+    if (!isObj(def) || !isObj(src)) return src === undefined ? def : src;
+    const out = {}; for (const k in def) out[k] = k in src ? mergeState(def[k], src[k]) : def[k];
+    for (const k in src) if (!(k in out)) out[k] = src[k];
+    return out;
+  }
+
+  /* ---- WTL for the whole week ---- */
+  const newWeek = (sunday, wtl) => ({ sunday, days: Array.from({ length: 7 }, () => Object.assign(blankDay(), { wtl: !!wtl })) });
+  function setWeekWtl(week, on) { week.days.forEach(d => { d.wtl = !!on; }); return week; }
+  const allWtl = week => week.days.every(d => !!d.wtl);
+
+  /* ---- archive ---- */
+  // one archive row per worked day; holidays you didn't work are not archived (as in the workbook)
+  function archiveEntries(week, lunch, edits, pto) {
+    return weekDays(week, lunch, edits).filter(x => x.d.in != null && !(x.hol && !x.d.hw))
+      .map(x => ({ date: x.date, in: x.d.in, out: x.d.out, hrs: x.paid, pto }));
+  }
+  // insert or replace by date, keeping the list sorted (mutates and returns `a`)
+  function upsertArchive(a, e) {
+    let lo = 0, hi = a.length;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (a[m].date < e.date) lo = m + 1; else hi = m; }
+    if (a[lo] && a[lo].date === e.date) {
+      const o = a[lo]; if (o.in !== e.in || o.out !== e.out || o.hrs !== e.hrs || o.pto !== e.pto) a[lo] = e;
+    } else a.splice(lo, 0, e);
+    return a;
+  }
+
+  /* ---- closing out a week ---- */
+  function closeout(week, lunch, edits, banked) {
+    const days = weekDays(week, lunch, edits), total = weekTotal(days);
+    return { days, total, short: total < WEEK_H ? r1(WEEK_H - total) : 0, floats: floatCheck(days, banked) };
+  }
+  // what closing out does to the PTO bank: floated holidays first, then (if chosen) PTO for a short week
+  function applyCloseout(c, bank, usePto, sunday) {
+    const log = [], bankKeys = c.floats.map(f => ({ year: f.year, key: f.key }));
+    for (const f of c.floats) {
+      if (bank != null && f.lostPto > 0) { bank = r1(bank - f.lostPto); log.push({ type: 'float', hrs: -f.lostPto, bank, note: 'Floated ' + f.name }); }
+      else log.push({ type: 'float', hrs: 0, bank, note: 'Floated ' + f.name });
+    }
+    if (usePto && bank != null && c.short > 0) { bank = r1(bank - c.short); log.push({ type: 'use', hrs: -c.short, bank, note: 'Covered ' + c.short.toFixed(1) + ' h short week of ' + shortDate(sunday) }); }
+    return { bank, log, bankKeys };
+  }
+
+  /* ---- PTO accrual ---- */
+  // run on every check: when an accrual date passes (and PTO is tracked) it becomes `pending` until you add or dismiss it
+  function accrualCheck(acc, hire, bank, today) {
+    if (!hire) return acc;
+    const a = Object.assign({}, acc);
+    if (bank != null) {
+      if (a.date && today >= a.date) { if (a.check && !a.pending) a.pending = { date: a.date, amt: a.amt }; }
+      else a.check = true;
+    }
+    a.date = calcAccDate(today); a.amt = accAmt(parse(a.date).getMonth() + 1, serviceYears(hire, today));
+    return a;
+  }
+  function applyAccrual(bank, amt, hire, today) {
+    const max = maxAccrual(annualAccrual(serviceYears(hire, today)));
+    let nb = r1(bank + amt), capped = false;
+    if (nb > max) { nb = max; capped = true; }
+    return { bank: nb, added: r1(nb - bank), capped, max };
+  }
+
+  /* ---- clock-out targets for today ---- */
+  // td: today's entry from weekDays; ahead: week hours vs. 8 h/day so far; nm: now (minutes)
+  function targets(td, ahead, nm, planDept, planWTL, lunch) {
+    if (!td || td.d.in == null) return null;
+    const inM = td.d.in, w = td.d.wtl, T = {};
+    T.full = calcMinTime(inM, DAY_H, w, lunch); T.fullH = T.full != null ? r1(calcHrs(inM, T.full, w, lunch)) : null;
+    T.need = r1((td.paid || 0) - ahead);
+    const raw = calcMinTime(inM, T.need, w, lunch);
+    T.evenState = raw == null ? (T.need > 0.001 ? 'unreachable' : 'ahead') : (nm > raw ? 'ahead' : 'time');
+    T.even = T.evenState === 'time' ? raw : null; T.evenH = T.even != null ? r1(calcHrs(inM, T.even, w, lunch)) : null;
+    T.planH = planDept != null ? r1(calcHrs(inM, planDept, planWTL, lunch)) : null;
+    T.prog = planDept > inM ? Math.min(1, Math.max(0, (nm - inM) / (planDept - inM))) : 0;
+    return T;
+  }
+
+  /* ---- week planner ---- */
+  // Mon-Thu scheduled hours; Friday is whatever is left of the target. Returns leave times per day.
+  function plan(planner, lunch) {
+    const sum4 = r1(planner.sched.slice(0, 4).reduce((s, v) => s + v, 0)), fri = r1(planner.target - sum4);
+    const sched = [0, 1, 2, 3, 4].map(i => i < 4 ? planner.sched[i] : fri);
+    const leave = sched.map((h, i) => planner.coming[i] != null && h > 0 ? calcMinTime(planner.coming[i], h, planner.wtl, lunch) : null);
+    return { sum4, fri, sched, leave };
+  }
+
+  /* ---- importing pasted rows (Excel or CSV) ---- */
+  function parseTimeLoose(s) {
+    s = String(s == null ? '' : s).trim(); if (!s) return null;
+    const m = /^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp])?\.?[Mm]?\.?$/.exec(s);
+    if (m) { let h = +m[1]; if (m[3]) { h %= 12; if (/p/i.test(m[3])) h += 12; } return h * 60 + +m[2]; }
+    const f = parseFloat(s); if (!isNaN(f) && f > 0 && f < 1) return Math.round(f * 1440);   // Excel time fraction
+    return null;
+  }
+  function parseDateLoose(s) {
+    s = String(s || '').trim(); let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s); if (m) return ymd(new Date(+m[1], m[2] - 1, +m[3]));
+    m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(s); if (m) { let y = +m[3]; if (y < 100) y += 2000; return ymd(new Date(y, m[1] - 1, +m[2])); }
+    const n = parseFloat(s); if (n > 20000 && n < 80000) return ymd(new Date(1899, 11, 30 + Math.floor(n)));   // Excel serial date
+    return null;
+  }
+  function parseImport(text) {
+    const out = [];
+    String(text).split(/\r?\n/).forEach(line => {
+      if (!line.trim()) return; const c = line.includes('\t') ? line.split('\t') : line.split(',');
+      const d = parseDateLoose(c[0]); if (!d) return;
+      const num = x => { const f = parseFloat(x); return isNaN(f) ? null : f; };
+      out.push({ date: d, in: parseTimeLoose(c[1]), out: parseTimeLoose(c[2]), hrs: num(c[3]), pto: num(c[4]) });
+    });
+    return out;
+  }
+
   return { DAY_H, WEEK_H, pad, ymd, parse, addDays, sundayOf, r1, toMin, fromMin, fmt12, calcHrs, calcCIOHrs, calcMinTime,
     PTO_TABLE, annualAccrual, maxAccrual, serviceYears, accAmt, calcAccDate, HOLS, defaultHolidayDates, holidaysFor, holidayOn,
-    blankDay, dayPaid, weekDays, weekTotal, floatCheck };
+    blankDay, dayPaid, weekDays, weekTotal, floatCheck, shortDate, defaultState, mergeState, newWeek, setWeekWtl, allWtl,
+    archiveEntries, upsertArchive, closeout, applyCloseout, accrualCheck, applyAccrual, targets, plan,
+    parseTimeLoose, parseDateLoose, parseImport };
 })();
 if (typeof module !== 'undefined') module.exports = TimeCore;
 else window.TimeCore = TimeCore;

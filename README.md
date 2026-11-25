@@ -30,7 +30,7 @@
 ### TimeSheet (weekly hours & PTO)
 Ported from Mark's Excel time-sheet workbook. Hours are counted in tenths of an hour (6-minute units) with the workbook's rounding.
 - **First visit:** enter your start (hire) date, lunch start and (optionally) PTO balance, or tap *Use defaults*.
-- **Dashboard:** **Clock in** stamps today's In time and keeps Out at the current time until you tap **Stop**. Resuming after a gap offers to log it as a break. **WTL** (working through lunch) skips the 30-minute lunch deduction. Every day's In/Out, WTL and break hours can be edited.
+- **Dashboard:** **Clock in** stamps today's In time and keeps Out at the current time until you tap **Stop**. Resuming after a gap offers to log it as a break. **WTL** (working through lunch) skips the 30-minute lunch deduction; the **WTL all week** switch on the week card turns it on for every day and makes new weeks start that way (also in Settings). Every day's In/Out, WTL and break hours can be edited.
 - **Week:** total, remaining to 40, and ahead/behind an 8-hour-a-day pace. Holidays fill in as 8 paid hours (tap *I worked this day* to count real hours instead).
 - **Clock-out targets:** when you reach 8.0 hours today, the earliest you can leave and stay on pace, and the hours you'd have at a planned time.
 - **PTO:** your bank, next accrual date and amount (by years of service), max bank and history. When an accrual date passes, a banner asks before adding it.
@@ -107,8 +107,9 @@ pages/budget-core.js        Budget logic with no DOM access: parsing, money form
                             totals, import checks, example data. Used by the page and the unit tests.
 pages/meal-plan.html        Weekly meal plan, recipes and grocery checklist
 pages/timesheet.html        TimeSheet: clock in/out, week, targets, PTO, archive, planner, holidays (UI and flows)
-pages/timesheet-core.js     TimeSheet logic with no DOM access: hour rounding, lunch, targets, PTO accrual,
-                            holidays, floating. Used by the page and the unit tests.
+pages/timesheet-core.js     TimeSheet logic with no DOM access: hour rounding, lunch/WTL, targets, PTO accrual,
+                            holidays, floating, closing out a week, archive, planner, import, saved-state merge.
+                            Used by the page and the unit tests.
 pages/sync.js               Shared sign-in + save/load helper for any tool page (Supabase)
 pages/vendor/supabase-2.119.0.js   Supabase browser library, served from this site (not a CDN)
                                    so ad blockers and CDN outages don't break sign-in
@@ -155,8 +156,8 @@ npm run test:all
 ```
 
 What's covered:
-- **Unit tests (28):** TimeSheet hours (lunch, WTL, tenths, breaks, holidays), clock-out times, PTO accrual dates and amounts, holiday dates and floating; budget number parsing, money formatting, due-date status (late, today, soon, later, short months), totals, progress bars, adding purchases without rounding drift, and import checking (valid files, bad files, trimming, clamping).
-- **Browser tests (50):**
+- **Unit tests (45):** TimeSheet hours (lunch, WTL and WTL all week, tenths, breaks, holidays), clock-out targets (8-hour, even, plan), PTO accrual dates, amounts, pending/add and the cap, holiday dates and floating, closing out a week (short week and PTO, full week, floated holiday), archive rows, the planner, pasted-row import, and loading older saved data; budget number parsing, money formatting, due-date status (late, today, soon, later, short months), totals, progress bars, adding purchases without rounding drift, and import checking (valid files, bad files, trimming, clamping).
+- **Browser tests (61):**
   - Every page loads with no errors and has the shared nav and footer.
   - The home page leads with "Odds & Ends" and the tools; the resume keeps Mark's name as its heading.
   - Every page fits a phone screen in dark mode.
@@ -165,7 +166,7 @@ What's covered:
   - The resume shows no private details, and the email isn't in the HTML source.
   - Budget: import (including bad files and confirmation), past months, the add-purchase bar, set total and over-plan, paid-bill grouping, collapse remembered after reload, edit mode, take-home pay entry, clear month, and phone layout.
   - Meal plan: checklist, hide pantry, copy list, uncheck all.
-  - TimeSheet: first-visit setup, week totals and pace, clock in and reload, editing days and WTL, tabs and archive, phone layout, and sync as page "timesheet".
+  - TimeSheet: first-visit setup, week totals and pace, clock in and reload, editing days and WTL, WTL all week (and as the new-week default), closing out a week with or without PTO and "Not yet", the PTO accrual banner, logging a break, clock-out targets, planner, pasted import, backup export/restore, tabs, phone layout, and sync as page "timesheet".
   - Sync, with a fake Supabase: sign-in link email, signing in with a password (and a wrong one), setting a password, loading saved data, the first upload, sign out, and the offline fallback.
 
 The browser tests never contact the real Supabase project.

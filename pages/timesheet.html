@@ -247,7 +247,8 @@ label.f{display:block;margin:14px 0 0;font-size:12.5px;color:var(--mut)} label.f
   <div class="stack">
     <article class="card">
       <div class="weekhead"><h2 id="weekTitle">This week</h2>
-        <span class="muted" style="font-size:13px">Every field is editable · WTL = working through lunch</span></div>
+        <span class="rowbar"><span class="muted" style="font-size:13px">Every field is editable · WTL = working through lunch</span>
+        <label class="switch" title="Working through lunch every day: no lunch is deducted. New weeks start the same way."><input type="checkbox" id="wkWtl"> WTL all week</label></span></div>
       <div class="days" id="days"></div>
       <div class="sumrow">
         <div class="tile"><div class="lbl">Total hours</div><div class="v num" id="wkTotal">0.0</div>
@@ -324,6 +325,7 @@ label.f{display:block;margin:14px 0 0;font-size:12.5px;color:var(--mut)} label.f
       <label class="f">Start (hire) date <input type="date" id="sHire"></label>
       <label class="f">Lunch starts <input type="time" id="sLunch"></label>
       <p class="muted" style="font-size:12.5px;margin:8px 0 0">A 30-minute lunch is deducted automatically when your day spans it (unless WTL is on). Years of service decide your PTO accrual.</p>
+      <label class="f" style="display:flex;align-items:center;gap:10px;margin-top:16px"><span class="switch"><input type="checkbox" id="sWtl"></span> Start new weeks with WTL on every day</label>
       <label class="f" style="display:flex;align-items:center;gap:10px;margin-top:16px"><span class="switch"><input type="checkbox" id="sAuto"></span> Start the clock automatically when this page opens</label>
     </article>
     <article class="card">
@@ -340,7 +342,7 @@ label.f{display:block;margin:14px 0 0;font-size:12.5px;color:var(--mut)} label.f
       <ul>
         <li><b>Hours are counted in 6-minute units (tenths of an hour)</b> using the same rounding as the original workbook, so the totals line up with your time system.</li>
         <li><b>Clock in</b> stamps your IN time and keeps OUT = now every second. <b>Stop</b> freezes OUT. Resuming after a gap offers to log it as a break.</li>
-        <li><b>Lunch</b>: 30 minutes from your lunch start are deducted when you work across it. Tick <b>WTL</b> to skip the deduction for a day.</li>
+        <li><b>Lunch</b>: 30 minutes from your lunch start are deducted when you work across it. Tick <b>WTL</b> to skip the deduction for a day, or <b>WTL all week</b> for every day (new weeks then start that way too).</li>
         <li><b>Breaks</b> (clocked out and back in) are subtracted from that day's paid hours. Don't log your normal lunch — it's automatic.</li>
         <li><b>New week</b> (Sunday): last week is archived and cleared. If it's under 40 hours you're asked whether to cover the gap with PTO.</li>
         <li><b>PTO accrues</b> on the Friday ending the first full week of each month; you're asked before it's added, capped at 1.5× your annual accrual.</li>
@@ -350,6 +352,7 @@ label.f{display:block;margin:14px 0 0;font-size:12.5px;color:var(--mut)} label.f
     <article class="card">
       <div class="card-h"><h3>Version history</h3></div>
       <div class="ver">
+        <b>2.2.0</b><span>WTL all week (and as the default for new weeks).</span>
         <b>2.1.0</b><span>Moved into Odds &amp; Ends: site look, light/dark mode, sync across devices when signed in.</span>
         <b>2.0.0</b><span>HTML edition: dark UI, auto-saving state, backup/restore, break log, PTO history, charts, CSV import/export.</span>
         <b>1.3.3</b><span>Fixed auto update for holidays in the new year</span>
@@ -371,7 +374,7 @@ label.f{display:block;margin:14px 0 0;font-size:12.5px;color:var(--mut)} label.f
 
 <footer class="site-foot" style="--maxw:1280px"><span>Odds &amp; Ends · Mark Hutchinson</span><span><a href="/">Home</a> · <a href="/pages/">Tools</a></span></footer>
 
-<script src="timesheet-core.js?v=1"></script>
+<script src="timesheet-core.js?v=2"></script>
 <script src="vendor/supabase-2.119.0.js"></script>
 <script src="sync.js?v=8"></script>
 <script>
@@ -391,25 +394,7 @@ const shortDate = s => { const d = parse(s); return (d.getMonth() + 1) + '/' + d
 const longDate = s => parse(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
 /* ---------------- state & persistence ---------------- */
-function defaults() {
-  return {
-    v: 1,
-    user: { hire: null, lunch: 660, ptoBank: null, planWTL: true, planDept: 960, autoStart: false },
-    week: { sunday: null, days: Array.from({ length: 7 }, () => Core.blankDay()) },
-    acc: { date: null, amt: 0, check: true, pending: null },
-    hol: { edits: {}, banked: {} },
-    archive: [], pto: [],
-    planner: { sched: [8, 8, 8, 8], coming: [420, 420, 420, 420, 420], target: 40.1, wtl: false },
-    lastYear: null, lastBackup: null
-  };
-}
-const isObj = x => x && typeof x === 'object' && !Array.isArray(x);
-function merge(def, src) {
-  if (!isObj(def) || !isObj(src)) return src === undefined ? def : src;
-  const out = {}; for (const k in def) out[k] = k in src ? merge(def[k], src[k]) : def[k];
-  for (const k in src) if (!(k in out)) out[k] = src[k];
-  return out;
-}
+const defaults = Core.defaultState, merge = Core.mergeState;
 function normalize() {
   const days = (state.week.days || []).slice(0, 7).map(d => Object.assign(Core.blankDay(), d));
   while (days.length < 7) days.push(Core.blankDay());
@@ -457,17 +442,7 @@ function derive() {
   const ahead = r1(total - goal), rem = Math.max(0, r1(40 - total));
   const td = cur ? days[dow] : null;
   const D = { n, today, nm, cur, days, total, rem, ahead, goal, td, dow };
-  if (td && td.d.in != null) {
-    const inM = td.d.in, w = td.d.wtl, L = u.lunch;
-    D.full = calcMinTime(inM, 8, w, L); D.fullH = D.full != null ? r1(calcHrs(inM, D.full, w, L)) : null;
-    const need = r1((td.paid || 0) - ahead);
-    const raw = calcMinTime(inM, need, w, L);
-    D.evenState = raw == null ? (need > 0.001 ? 'unreachable' : 'ahead') : (nm > raw ? 'ahead' : 'time');
-    D.need = need; const ev = D.evenState === 'time' ? raw : null;
-    D.even = ev; D.evenH = ev != null ? r1(calcHrs(inM, ev, w, L)) : null;
-    D.planH = u.planDept != null ? r1(calcHrs(inM, u.planDept, u.planWTL, L)) : null;
-    D.prog = u.planDept > inM ? Math.min(1, Math.max(0, (nm - inM) / (u.planDept - inM))) : 0;
-  }
+  Object.assign(D, Core.targets(td, ahead, nm, u.planDept, u.planWTL, u.lunch));
   return D;
 }
 
@@ -505,21 +480,10 @@ function ptoLog(type, hrs, note) {
   state.pto.push({ date: todayStr(), type, hrs: r1(hrs), bank: state.user.ptoBank, note: note || '' });
   if (state.pto.length > 500) state.pto.splice(0, state.pto.length - 500);
 }
-function upsertArchive(e) {
-  const a = state.archive; let lo = 0, hi = a.length;
-  while (lo < hi) { const m = (lo + hi) >> 1; if (a[m].date < e.date) lo = m + 1; else hi = m; }
-  if (a[lo] && a[lo].date === e.date) {
-    const o = a[lo]; if (o.in !== e.in || o.out !== e.out || o.hrs !== e.hrs || o.pto !== e.pto) a[lo] = e;
-  } else a.splice(lo, 0, e);
-}
+const upsertArchive = e => Core.upsertArchive(state.archive, e);
 function syncArchive() {
   if (!state.week.sunday) return;
-  const days = Core.weekDays(state.week, state.user.lunch, state.hol.edits);
-  for (const x of days) {
-    if (x.d.in == null) continue;
-    if (x.hol && !x.d.hw) continue;        // holiday rows are not archived (as in the workbook)
-    upsertArchive({ date: x.date, in: x.d.in, out: x.d.out, hrs: x.paid, pto: state.user.ptoBank });
-  }
+  Core.archiveEntries(state.week, state.user.lunch, state.hol.edits, state.user.ptoBank).forEach(upsertArchive);
 }
 function commit() { syncArchive(); save(); update(); }
 const bankedCount = y => { const b = (state.hol.banked[y]) || {}; return Core.HOLS.filter(h => h[2] && b[h[0]]).length; };
@@ -563,7 +527,7 @@ async function newYearCheck() {
   }
 }
 
-function resetWeek(sun) { state.week = { sunday: sun, days: Array.from({ length: 7 }, () => Core.blankDay()) }; }
+function resetWeek(sun) { state.week = Core.newWeek(sun, state.user.wtlDefault); }
 
 async function ensureCurrentWeek() {
   const cur = sundayOf(todayStr()), wk = state.week;
@@ -572,9 +536,8 @@ async function ensureCurrentWeek() {
   if (wk.sunday == null || !has) { resetWeek(cur); save(); return true; }
 
   syncArchive();
-  const days = Core.weekDays(wk, state.user.lunch, state.hol.edits);
-  const total = Core.weekTotal(days), floats = Core.floatCheck(days, state.hol.banked);
-  const bank = state.user.ptoBank, short = total < 40 ? r1(40 - total) : 0;
+  const co = Core.closeout(wk, state.user.lunch, state.hol.edits, state.hol.banked);
+  const { days, total, floats, short } = co, bank = state.user.ptoBank;
   const rows = days.map(x => `<tr><td>${DAYN[x.i]} ${shortDate(x.date)}</td><td>${x.hol && !x.d.hw ? esc(x.hol.name) : x.d.in != null ? fmt12(x.d.in) + ' – ' + fmt12(x.d.out) : '—'}</td><td>${x.paid != null ? f1(x.paid) : '—'}</td></tr>`).join('');
   let extra = '';
   floats.forEach(f => extra += `<p style="color:var(--hol)">⚑ You floated <b>${esc(f.name)}</b> — it will be banked${f.lostPto > 0 ? ` and <b>${f1(f.lostPto)} h</b> of PTO deducted` : ''}.</p>`);
@@ -592,33 +555,21 @@ async function ensureCurrentWeek() {
     actions
   });
   if (choice === 'cancel' || choice == null) { rolloverDeclined = true; update(); return false; }
-  for (const f of floats) {
-    (state.hol.banked[f.year] = state.hol.banked[f.year] || {})[f.key] = true;
-    if (bank != null && f.lostPto > 0) { state.user.ptoBank = r1(state.user.ptoBank - f.lostPto); ptoLog('float', -f.lostPto, 'Floated ' + f.name); }
-    else ptoLog('float', 0, 'Floated ' + f.name);
-  }
-  if (choice === 'pto' && state.user.ptoBank != null) { state.user.ptoBank = r1(state.user.ptoBank - short); ptoLog('use', -short, 'Covered ' + f1(short) + ' h short week of ' + shortDate(wk.sunday)); }
+  const res = Core.applyCloseout(co, bank, choice === 'pto', wk.sunday);
+  res.bankKeys.forEach(b => { (state.hol.banked[b.year] = state.hol.banked[b.year] || {})[b.key] = true; });
+  res.log.forEach(e => state.pto.push(Object.assign({ date: todayStr() }, e)));
+  state.user.ptoBank = res.bank;
   syncArchive(); resetWeek(cur); rolloverDeclined = false; save(); update();
   return true;
 }
 
-function accrualMaintenance() {
-  const u = state.user, a = state.acc, today = todayStr(); if (!u.hire) return;
-  const yrs = Core.serviceYears(u.hire, today);
-  if (u.ptoBank != null) {
-    if (a.date && today >= a.date) { if (a.check && !a.pending) a.pending = { date: a.date, amt: a.amt }; }
-    else a.check = true;
-  }
-  a.date = Core.calcAccDate(today); a.amt = Core.accAmt(parse(a.date).getMonth() + 1, yrs);
-}
+function accrualMaintenance() { state.acc = Core.accrualCheck(state.acc, state.user.hire, state.user.ptoBank, todayStr()); }
 function addAccrual() {
   const a = state.acc, u = state.user, p = a.pending; if (!p) return;
-  const max = Core.maxAccrual(Core.annualAccrual(Core.serviceYears(u.hire, todayStr())));
-  const old = u.ptoBank; let nb = r1(old + p.amt), capped = false;
-  if (nb > max) { nb = max; capped = true; }
-  u.ptoBank = nb; ptoLog('accrual', nb - old, 'Accrual for ' + longDate(p.date));
+  const r = Core.applyAccrual(u.ptoBank, p.amt, u.hire, todayStr());
+  u.ptoBank = r.bank; ptoLog('accrual', r.added, 'Accrual for ' + longDate(p.date));
   a.check = false; a.pending = null; commit();
-  toast(capped ? `You've reached the maximum PTO bank (${max} h).` : `Added ${f1(nb - old)} h PTO.`);
+  toast(r.capped ? `You've reached the maximum PTO bank (${r.max} h).` : `Added ${f1(r.added)} h PTO.`);
 }
 function dismissAccrual() { state.acc.pending = null; state.acc.check = false; save(); update(); }
 
@@ -806,7 +757,7 @@ function update() {
   // week
   const sun = state.week.sunday || D.today;
   $('#weekTitle').textContent = 'Week of ' + shortDate(sun) + ' – ' + shortDate(addDays(sun, 6)) + (D.cur ? '' : '  (not closed out)');
-  updateDays(D);
+  updateDays(D); $('#wkWtl').checked = Core.allWtl(state.week);
   $('#wkTotal').textContent = D.total.toFixed(1);
   $('#wkBar').style.width = Math.min(100, D.total / 40 * 100) + '%';
   $('#wkTotalSub').textContent = `of 40 h · ${Math.round(Math.min(100, D.total / 40 * 100))}%`;
@@ -956,29 +907,7 @@ function wireArchive() {
     }).then(v => { if (v) { parsed.forEach(r => { const i = state.archive.findIndex(x => x.date === r.date); if (i >= 0) state.archive[i] = r; else state.archive.push(r); }); normalize(); save(); renderArchive(); toast(`Imported ${parsed.length} rows.`); } });
   };
 }
-function parseTimeLoose(s) {
-  s = String(s == null ? '' : s).trim(); if (!s) return null;
-  let m = /^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp])?\.?[Mm]?\.?$/.exec(s);
-  if (m) { let h = +m[1]; if (m[3]) { h %= 12; if (/p/i.test(m[3])) h += 12; } return h * 60 + +m[2]; }
-  const f = parseFloat(s); if (!isNaN(f) && f > 0 && f < 1) return Math.round(f * 1440);
-  return null;
-}
-function parseDateLoose(s) {
-  s = String(s || '').trim(); let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s); if (m) return ymd(new Date(+m[1], m[2] - 1, +m[3]));
-  m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(s); if (m) { let y = +m[3]; if (y < 100) y += 2000; return ymd(new Date(y, m[1] - 1, +m[2])); }
-  const n = parseFloat(s); if (n > 20000 && n < 80000) return ymd(new Date(1899, 11, 30 + Math.floor(n)));
-  return null;
-}
-function parseImport(text) {
-  const out = [];
-  text.split(/\r?\n/).forEach(line => {
-    if (!line.trim()) return; const c = line.includes('\t') ? line.split('\t') : line.split(',');
-    const d = parseDateLoose(c[0]); if (!d) return;
-    const num = x => { const f = parseFloat(x); return isNaN(f) ? null : f; };
-    out.push({ date: d, in: parseTimeLoose(c[1]), out: parseTimeLoose(c[2]), hrs: num(c[3]), pto: num(c[4]) });
-  });
-  return out;
-}
+const parseImport = Core.parseImport;
 function download(name, text, type) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
@@ -1003,15 +932,14 @@ function buildPlanner() {
   $('#plWtl').onchange = e => { state.planner.wtl = e.target.checked; save(); updatePlanner(); };
 }
 function updatePlanner(D) {
-  D = D || derive(); const pl = state.planner, L = state.user.lunch;
-  const sum4 = r1(pl.sched.slice(0, 4).reduce((s, v) => s + v, 0)), fri = r1(pl.target - sum4);
+  D = D || derive(); const pl = state.planner, P = Core.plan(pl, state.user.lunch), { sum4, fri } = P;
   $$('#plTbl tbody tr').forEach((tr, i) => {
     const day = D.days[i + 1];
     $('.act', tr).textContent = day && day.paid != null ? f1(day.paid) : '—';
-    const sch = i < 4 ? pl.sched[i] : fri;
+    const sch = P.sched[i];
     if (i < 4) setVal($('.psch', tr), sch); else $('.frisch', tr).textContent = (fri > 0 ? f1(fri) : '0.0') + ' (remaining)';
     setVal($('.pcome', tr), fromMin(pl.coming[i]));
-    const lv = pl.coming[i] != null && sch > 0 ? calcMinTime(pl.coming[i], sch, pl.wtl, L) : null;
+    const lv = P.leave[i];
     $('.lv', tr).innerHTML = lv != null ? `<b>${fmt12(lv)}</b>` : '—';
   });
   setVal($('#plTarget'), pl.target); $('#plWtl').checked = !!pl.wtl;
@@ -1054,13 +982,14 @@ function renderHolidays() {
 
 /* ---------------- settings tab ---------------- */
 function renderSettings() {
-  const u = state.user; setVal($('#sHire'), u.hire || ''); setVal($('#sLunch'), fromMin(u.lunch)); $('#sAuto').checked = !!u.autoStart;
+  const u = state.user; setVal($('#sHire'), u.hire || ''); setVal($('#sLunch'), fromMin(u.lunch)); $('#sAuto').checked = !!u.autoStart; $('#sWtl').checked = !!u.wtlDefault;
   $('#lastBackup').textContent = state.lastBackup ? 'Last backup exported on ' + longDate(state.lastBackup) + '.' : 'No backup exported yet.';
 }
 function wireSettings() {
   $('#sHire').onchange = e => { if (e.target.value > todayStr()) { toast('Start date is in the future.'); e.target.value = state.user.hire || ''; return; } state.user.hire = e.target.value || null; accrualMaintenance(); save(); update(); };
   $('#sLunch').onchange = e => { const m = toMin(e.target.value); if (m == null) { e.target.value = fromMin(state.user.lunch); return; } state.user.lunch = m; commit(); };
   $('#sAuto').onchange = e => { state.user.autoStart = e.target.checked; save(); };
+  $('#sWtl').onchange = e => { state.user.wtlDefault = e.target.checked; save(); };
   $('#bkExport').onclick = () => { download('timesheet-backup-' + todayStr() + '.json', JSON.stringify(state, null, 1), 'application/json'); state.lastBackup = todayStr(); save(); renderSettings(); toast('Backup downloaded.'); };
   $('#bkImport').onclick = () => $('#bkFile').click();
   $('#bkFile').onchange = async e => {
@@ -1096,6 +1025,8 @@ function wire() {
   $('#inTime').onchange = e => { if (onCur()) { td().in = toMin(e.target.value); commit(); } };
   $('#outTime').onchange = e => { if (onCur()) { td().out = toMin(e.target.value); commit(); } };
   $('#todayWtl').onchange = e => { if (onCur()) { td().wtl = e.target.checked; commit(); } };
+  // WTL all week: every day of this week, and the default for new weeks
+  $('#wkWtl').onchange = e => { Core.setWeekWtl(state.week, e.target.checked); state.user.wtlDefault = e.target.checked; commit(); };
   $('#planDept').onchange = e => { const m = toMin(e.target.value); if (m != null) { state.user.planDept = m; commit(); } };
   $('#planWtl').onchange = e => { state.user.planWTL = e.target.checked; commit(); };
   $('#ptoBank').onchange = e => {
