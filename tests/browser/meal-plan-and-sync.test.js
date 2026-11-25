@@ -100,6 +100,35 @@ test("sync: the emailed code signs you in without opening the link (wrong code s
   await page.context().close();
 });
 
+test("sync: sign in with email and password (wrong password shows an error)", async () => {
+  const page = await mealPage({ fakeSupabase: { signedIn: false, remote: { checked: {}, hidePantry: false } } });
+  await page.waitForSelector("#ps-email");
+  assert.equal(await page.locator("#ps-pw").isVisible(), false, "password box hidden until asked for");
+  await page.click("#ps-usepw");
+  await page.fill("#ps-email", "someone@example.com");
+  await page.fill("#ps-pw", "wrong");
+  await page.click("#ps-pass button");
+  await page.waitForFunction(() => /Couldn't sign in/.test(document.querySelector("#sync").innerText));
+  await page.fill("#ps-pw", "correct-horse");
+  await page.click("#ps-pass button");
+  await page.waitForFunction(() => /Syncing as/.test(document.querySelector("#sync").innerText));
+  assert.deepEqual(await page.evaluate(() => window.__pw.at(-1)), { email: "someone@example.com", password: "correct-horse" });
+  assert.equal(await page.evaluate(() => window.__otp.length), 0, "no email sent");
+  await page.context().close();
+});
+
+test("sync: signed in, you can set a password for other devices", async () => {
+  const page = await mealPage({ fakeSupabase: { signedIn: true, remote: { checked: {}, hidePantry: false } } });
+  await page.waitForSelector("#ps-pwbtn");
+  await page.click("#ps-pwbtn");
+  await page.fill("#ps-newpw", "a-long-password");
+  await page.click("#ps-setpw button");
+  await page.waitForFunction(() => /Password saved/.test(document.querySelector("#sync").innerText));
+  assert.deepEqual(await page.evaluate(() => window.__setpw), [{ password: "a-long-password" }]);
+  assert.equal(await page.locator("#ps-setpw").isVisible(), false);
+  await page.context().close();
+});
+
 test("sync: signed in loads saved checkmarks from the server", async () => {
   const remote = { checked: { g0: true, g1: true, g2: true }, hidePantry: false };
   const page = await mealPage({ fakeSupabase: { signedIn: true, remote } });
@@ -120,8 +149,8 @@ test("sync: first sign-in with nothing saved uploads this device's checkmarks", 
 
 test("sync: sign out returns to the sign-in form", async () => {
   const page = await mealPage({ fakeSupabase: { signedIn: true, remote: { checked: {}, hidePantry: false } } });
-  await page.waitForSelector("#sync .link");
-  await page.click("#sync .link");
+  await page.waitForSelector("#ps-out");
+  await page.click("#ps-out");
   await page.waitForSelector("#ps-email");
   await page.context().close();
 });
