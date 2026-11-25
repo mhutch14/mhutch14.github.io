@@ -37,8 +37,8 @@
 
 /* bills */
 .list{padding:4px 0}
-.bill,.cat{display:grid;align-items:center;gap:8px 10px;padding:10px 16px;border-bottom:1px solid var(--line)}
-.bill:last-child,.cat:last-child{border-bottom:0}
+.bill{display:grid;align-items:center;gap:8px 10px;padding:10px 16px;border-bottom:1px solid var(--line)}
+.bill:last-child{border-bottom:0}
 .bill{grid-template-columns:20px minmax(0,1fr) auto auto}
 .bill input[type=checkbox]{width:18px;height:18px;margin:0;accent-color:var(--accent)}
 .bill .name{font-weight:500}
@@ -51,18 +51,38 @@
 .pill.late{background:var(--bad-soft);color:var(--bad)}
 .pill.later{color:var(--muted);border:1px solid var(--line)}
 
-/* categories */
-.cat{grid-template-columns:minmax(0,1fr) auto}
-.cat .top{display:flex;justify-content:space-between;gap:10px;grid-column:1 / -1}
-.cat .top b{font-weight:500}
-.bar{grid-column:1 / -1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+/* categories: one compact row each; tap to open */
+.quick{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.quick input,.quick select{min-width:0;width:100%;font:inherit;font-size:14px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.quick .btn{white-space:nowrap}
+.quick .done{grid-column:1 / -1;font-size:12px;color:var(--good);margin-top:-2px}
+.cat{border-bottom:1px solid var(--line)}
+.cat:last-child{border-bottom:0}
+.crow{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:grid;align-items:center;gap:4px 14px;padding:9px 16px;
+  grid-template-columns:minmax(0,1fr) minmax(50px,100px) 8.2em;grid-template-areas:"name bar amt"}
+.crow:hover{background:var(--bg)}
+.cat:last-child .crow{border-radius:0 0 var(--radius) var(--radius)}
+.crow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.crow .nm{grid-area:name;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow .bar{grid-area:bar}
+.crow .amt{grid-area:amt;font-size:14px;text-align:right}
+.crow .amt .of{color:var(--muted)}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
 .cat.over .bar i{background:var(--bad)}
-.cat.over .amt{color:var(--bad)}
-.cat .add{grid-column:1 / -1;display:flex;gap:6px}
-.cat .add input{flex:1 1 auto;min-width:0;font-family:var(--mono);font-size:13px;padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
-.cat .add .btn{padding:5px 10px;font-size:12px;white-space:nowrap}
-.cat .left{font-size:12px;color:var(--muted)}
+.cat.over .amt b{color:var(--bad)}
+.amt b{font-weight:500}
+.cdetail{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:2px 16px 12px;font-size:13px;color:var(--muted)}
+.cdetail .st{flex:1 1 140px}
+.cdetail .st.over{color:var(--bad)}
+.cdetail form{display:flex;gap:6px;align-items:center}
+.cdetail input{width:110px;font:inherit;font-size:13px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.cdetail .btn{padding:5px 12px;font-size:12px}
+@media (max-width:560px){
+  .crow{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"name amt" "bar bar";padding:9px 16px 10px;gap:6px 12px}
+  .quick{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr)}
+  .quick .btn{grid-column:1 / -1}
+}
 
 /* edit mode */
 .edit-row{display:grid;gap:6px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line)}
@@ -121,7 +141,15 @@
     </section>
     <section>
       <div class="sec-head"><h2>Spending</h2><span class="meta" id="catsMeta"></span></div>
-      <div class="panel list" id="cats"></div>
+      <div class="panel">
+        <form class="quick" id="quick" autocomplete="off">
+          <input id="qAmt" inputmode="decimal" placeholder="Amount ($)" aria-label="Purchase amount">
+          <select id="qCat" aria-label="Category"></select>
+          <button class="btn primary" type="submit">Add purchase</button>
+          <span class="done" id="qDone" hidden></span>
+        </form>
+        <div class="list" id="cats"></div>
+      </div>
     </section>
   </div>
   <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
@@ -173,7 +201,7 @@ const EXAMPLE = () => ({
 
 let state; try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
 if (!state || !Array.isArray(state.bills)) state = EXAMPLE();
-let editing = false;
+let editing = false, openCat = null, lastCat = null;
 const now = new Date();
 let cur = { y: now.getFullYear(), m: now.getMonth() };
 
@@ -236,18 +264,26 @@ function render() {
       <span class="pill ${cls}">${label}</span><span class="amt">${money(num(b.amount))}</span></label>`;
   }).join("") : `<p class="note" style="padding:12px 16px">No bills yet. Tap "Edit bills &amp; categories" to add one.</p>`;
 
+  $("quick").hidden = false;
+  const qs = $("qCat"), keep = qs.value || lastCat;
+  qs.innerHTML = state.cats.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  if (state.cats.some(c => c.id === keep)) qs.value = keep;
+
   $("cats").innerHTML = state.cats.length ? state.cats.map(c => {
-    const s = num(mo.spent[c.id] || 0), pl = num(c.planned), over = s > pl;
+    const s = num(mo.spent[c.id] || 0), pl = num(c.planned), over = s > pl, open = openCat === c.id;
     const pct = pl ? Math.min(100, s / pl * 100) : (s ? 100 : 0);
     return `<div class="cat${over ? " over" : ""}">
-      <div class="top"><b>${esc(c.name)}</b><span class="amt">${money(s)} <span style="color:var(--muted)">/ ${money(pl)}</span></span></div>
-      <div class="bar"><i style="width:${pct}%"></i></div>
-      <form class="add" data-cat="${c.id}"><input id="add-${c.id}" inputmode="decimal" placeholder="Add a purchase ($)" aria-label="Add a purchase to ${esc(c.name)}"><button class="btn" type="submit">Add</button><button class="btn" type="button" data-undo="${c.id}" title="Set this month's total">Set total</button></form>
-      <span class="left">${over ? `${money(s - pl)} over` : `${money(pl - s)} left`}</span></div>`;
+      <button class="crow" type="button" data-open="${c.id}" aria-expanded="${open}">
+        <span class="nm">${esc(c.name)}</span><span class="bar" aria-hidden="true"><i style="width:${pct}%"></i></span>
+        <span class="amt"><b>${money(s)}</b> <span class="of">/ ${money(pl)}</span></span></button>
+      ${open ? `<div class="cdetail"><span class="st${over ? " over" : ""}">${over ? `${money(s - pl)} over plan` : `${money(pl - s)} left this month`}</span>
+        <form class="settotal" data-cat="${c.id}"><label for="set-${c.id}">Month total</label><input id="set-${c.id}" inputmode="decimal" value="${s || ""}" placeholder="0"><button class="btn" type="submit">Save</button></form></div>` : ""}
+    </div>`;
   }).join("") : `<p class="note" style="padding:12px 16px">No spending categories yet.</p>`;
 }
 
 function renderEdit() {
+  $("quick").hidden = true;
   $("bills").innerHTML = `<div class="edit-row b edit-head"><span>Bill</span><span>Amount</span><span>Due day</span><span></span></div>` +
     state.bills.map(b => `<div class="edit-row b" data-id="${b.id}">
       <input value="${esc(b.name)}" data-f="name" aria-label="Bill name"><input class="n" value="${b.amount}" data-f="amount" inputmode="decimal" aria-label="Amount">
@@ -275,18 +311,24 @@ document.addEventListener("change", e => {
   }
 });
 document.addEventListener("submit", e => {
-  const f = e.target.closest("form.add"); if (!f) return;
+  const f = e.target.closest("form.settotal"); if (!f) return;
   e.preventDefault();
-  const inp = f.querySelector("input"); const v = num(inp.value); if (!v) return;
-  const mo = month(); mo.spent[f.dataset.cat] = Math.round((num(mo.spent[f.dataset.cat] || 0) + v) * 100) / 100;
-  inp.value = ""; changed();
+  month().spent[f.dataset.cat] = Math.max(0, Math.round(num(f.querySelector("input").value) * 100) / 100);
+  changed();
+});
+$("quick").addEventListener("submit", e => {
+  e.preventDefault();
+  const v = num($("qAmt").value), id = $("qCat").value; if (!v || !id) { $("qAmt").focus(); return; }
+  const mo = month(); mo.spent[id] = Math.round((num(mo.spent[id] || 0) + v) * 100) / 100;
+  lastCat = id; $("qAmt").value = "";
+  const c = state.cats.find(x => x.id === id), d = $("qDone");
+  d.textContent = `Added ${money(v)} to ${c ? c.name : "category"}.`; d.hidden = false; clearTimeout(d._t); d._t = setTimeout(() => d.hidden = true, 2500);
+  changed();
 });
 document.addEventListener("click", e => {
   const t = e.target;
-  if (t.dataset.undo) {
-    const inp = $("add-" + t.dataset.undo); const mo = month();
-    mo.spent[t.dataset.undo] = Math.max(0, num(inp.value)); inp.value = ""; changed();
-  }
+  const row = t.closest("[data-open]");
+  if (row) { openCat = openCat === row.dataset.open ? null : row.dataset.open; render(); const b = document.querySelector(`[data-open="${row.dataset.open}"]`); b && b.focus(); }
   if (t.dataset.del) {
     const id = t.closest(".edit-row").dataset.id;
     if (t.dataset.del === "bill") state.bills = state.bills.filter(b => b.id !== id);
