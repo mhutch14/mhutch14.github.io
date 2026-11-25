@@ -1,8 +1,8 @@
 /*
  * PageSync: saves a page's state to Supabase so it follows you across devices.
  * Needs the supabase-js UMD build loaded first:
- *   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
- *   <script src="sync.js"></script>
+ *   <script src="vendor/supabase-2.119.0.js"></script>
+ *   <script src="sync.js?v=2"></script>
  *
  * Usage:
  *   PageSync.init({ page: "meal-plan", mount: el, onData: data => {...} });
@@ -33,7 +33,10 @@
 
   function render() {
     const m = opts.mount; if (!m) return;
-    if (!configured) { m.innerHTML = ""; return; }
+    if (!configured) {
+      m.innerHTML = `<div class="ps"><span class="st warn">Sync couldn't start, so checkmarks are saved on this device only. Try refreshing the page.</span></div>`;
+      return;
+    }
     if (user) {
       m.innerHTML = `<div class="ps"><div class="row"><span class="st ok">Syncing as <b></b></span>
         <button class="link" type="button">Sign out</button></div></div>`;
