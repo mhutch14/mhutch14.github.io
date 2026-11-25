@@ -1,0 +1,6 @@
+{
+  // VS Code offers to install these when you open the project.
+  "recommendations": [
+    "connor4312.nodejs-testing"   // shows the unit and browser tests in the Testing panel (beaker icon)
+  ]
+}

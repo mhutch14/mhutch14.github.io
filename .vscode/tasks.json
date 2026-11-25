@@ -1,0 +1,17 @@
+{
+  // Terminal > Run Task... (or Ctrl+Shift+P, "Tasks: Run Task")
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Preview site",
+      "detail": "Serve the site at http://127.0.0.1:8080 like GitHub Pages does",
+      "type": "npm", "script": "serve",
+      "isBackground": true,
+      "problemMatcher": { "pattern": { "regexp": "^x^" }, "background": { "activesBegin": true, "beginsPattern": ".", "endsPattern": "Serving the site at" } }
+    },
+    { "label": "Unit tests", "detail": "npm test", "type": "npm", "script": "test", "group": { "kind": "test", "isDefault": true }, "problemMatcher": [] },
+    { "label": "Browser tests", "detail": "npm run test:browser (Playwright + Chromium)", "type": "npm", "script": "test:browser", "group": "test", "problemMatcher": [] },
+    { "label": "All tests", "detail": "Unit, then browser tests (run before pushing)", "type": "npm", "script": "test:all", "group": "test", "problemMatcher": [] },
+    { "label": "First-time setup", "detail": "Install Playwright and its Chromium browser", "type": "shell", "command": "npm install && npx playwright install chromium", "problemMatcher": [] }
+  ]
+}

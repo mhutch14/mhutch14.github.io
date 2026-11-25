@@ -1,0 +1,12 @@
+{
+  // Testing panel: which files are tests (unit + browser), run with Node's built-in test runner.
+  "nodejs-testing.include": ["./tests"],
+  "nodejs-testing.extensions": [{ "extensions": ["test.js"], "parameters": [] }],
+  // Browser tests share one Chromium and a local server, so run test files one at a time.
+  "nodejs-testing.concurrency": 1,
+
+  "files.exclude": { "**/node_modules": true, "test-results": true },
+  "search.exclude": { "pages/vendor/**": true },
+  "editor.tabSize": 2,
+  "files.insertFinalNewline": true
+}

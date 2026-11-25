@@ -19,6 +19,6 @@ jobs:
       - name: Unit tests
         run: npm test
       - name: Install Playwright
-        run: npm install --no-audit --no-fund && npx playwright install --with-deps chromium
+        run: npm ci --no-audit --no-fund && npx playwright install --with-deps chromium
       - name: Browser tests
         run: npm run test:browser

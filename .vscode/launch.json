@@ -1,0 +1,24 @@
+{
+  // Run and Debug panel (Ctrl+Shift+D), or F5 for the selected entry.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Open the site in Chrome",
+      "type": "chrome", "request": "launch",
+      "url": "http://127.0.0.1:8080/",
+      "preLaunchTask": "Preview site"
+    },
+    {
+      "name": "Debug unit tests",
+      "type": "node", "request": "launch",
+      "runtimeArgs": ["--test", "tests/unit/**/*.test.js"],
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug the open test file",
+      "type": "node", "request": "launch",
+      "runtimeArgs": ["--test", "${file}"],
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

@@ -121,6 +121,9 @@ tests/browser/              Browser tests for every page (Playwright + Chromium)
 tests/browser/fixtures/     Sample budget file used by the tests (fake numbers)
 tests/serve.js              Local preview server: npm run serve
 _config.yml                 GitHub Pages settings: keeps tests, notes and setup files off the live site
+.vscode/                    VS Code setup: recommended extension, test discovery, tasks, preview and debug
+.github/workflows/tests.yml Runs the unit and browser tests on GitHub on every push
+package-lock.json           Exact test-tool versions (Playwright)
 package.json                Test and preview commands
 CLAUDE.md                   Working notes for Claude Code sessions: conventions, privacy rules, how to add a page
 ```
@@ -128,6 +131,32 @@ CLAUDE.md                   Working notes for Claude Code sessions: conventions,
 ---
 
 ## Working on the site
+
+### Set up on your laptop (VS Code)
+One-time installs (all free):
+1. **Git**: https://git-scm.com/downloads (on a Mac, running `git --version` in Terminal offers to install it).
+2. **Node.js 22 LTS**: https://nodejs.org (the "LTS" installer).
+3. **VS Code**: https://code.visualstudio.com
+4. **Google Chrome** or Microsoft Edge, for viewing the site from VS Code.
+
+Get the project:
+1. In VS Code: **Ctrl+Shift+P** (Cmd+Shift+P on a Mac) → **Git: Clone** → paste `https://github.com/mhutch14/mhutch14.github.io.git` → pick a folder (e.g. Documents) → **Open**.
+2. Click **Yes, I trust the authors** when asked.
+3. Accept the pop-up to install the recommended extension (**Node.js Test Runner**), which puts the tests in the Testing panel.
+4. **Terminal → Run Task… → First-time setup**. This installs Playwright and its Chromium browser (a few minutes, about 200 MB).
+
+Day to day:
+| To... | Do this |
+|---|---|
+| See and run the tests | **Testing** panel (beaker icon on the left): run all, one file or one test; failures show inline in the code. Or **Terminal → Run Task… → Unit tests / Browser tests / All tests**. |
+| Preview the site | **Run and Debug** (Ctrl+Shift+D) → **Open the site in Chrome** → ▶. It starts the local server and opens http://127.0.0.1:8080. (Edge: change `"chrome"` to `"msedge"` in `.vscode/launch.json`.) |
+| Step through a test | Set a breakpoint (click left of a line number), then **Run and Debug → Debug the open test file** with that test file open. |
+| Publish | **Source Control** panel: write a message, **Commit**, then **Sync Changes**. Pushing to `master` publishes the live site in a minute or two, and GitHub runs the tests (see the repo's Actions tab). Run **All tests** first. |
+| Get changes made elsewhere (e.g. in a Claude session) | **Source Control → ⋯ → Pull** (or the sync arrows in the status bar). |
+
+The first push asks you to sign in to GitHub in the browser; VS Code remembers it after that.
+
+Project files for VS Code live in `.vscode/`: `extensions.json` (recommended extension), `settings.json` (test discovery), `tasks.json` (the tasks above) and `launch.json` (preview and debugging).
 
 ### Preview locally
 ```bash
