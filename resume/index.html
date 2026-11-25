@@ -62,7 +62,7 @@ aside h2{font-size:18px;margin-bottom:10px}
     <div class="contact">
       <span id="email-wrap"><a id="email" href="#">Email</a> <button class="btn copy no-print" id="copyEmail" type="button">Copy</button></span>
       <a href="https://github.com/mhutch14" target="_blank" rel="noopener">GitHub</a>
-      <a id="linkedin" href="#" target="_blank" rel="noopener" hidden>LinkedIn</a>
+      <a href="https://www.linkedin.com/in/mark-hutchinson-085267a5" target="_blank" rel="noopener">LinkedIn</a>
       <span class="toast" id="toast" hidden></span>
     </div>
     <div class="toolbar no-print"><button class="btn" id="printBtn" type="button">Print or save as PDF</button></div>
@@ -157,11 +157,9 @@ aside h2{font-size:18px;margin-bottom:10px}
 
 <script>
 // Email is assembled here so simple scrapers reading the HTML don't pick it up.
-const LINKEDIN = ""; // e.g. "https://www.linkedin.com/in/your-name"
 const addr = ["mark.hutch12", "gmail.com"].join("@");
 const a = document.getElementById("email");
 a.textContent = addr; a.href = "mailto:" + addr;
-if (LINKEDIN) { const l = document.getElementById("linkedin"); l.href = LINKEDIN; l.hidden = false; }
 const toast = document.getElementById("toast");
 document.getElementById("copyEmail").onclick = () => {
   navigator.clipboard.writeText(addr).then(() => { toast.textContent = "Copied"; toast.hidden = false; setTimeout(() => toast.hidden = true, 2000); },
