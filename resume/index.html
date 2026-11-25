@@ -33,7 +33,9 @@ section{margin-bottom:34px}
 .job h3{font-family:var(--display);font-weight:600;font-size:20px;line-height:1.25;margin:2px 0 0}
 .job .org{color:var(--muted);font-size:14px;margin-bottom:10px}
 .role{margin-top:12px}
-.role h4{margin:0 0 4px;font-size:14px;font-weight:600}
+.role h4{margin:0 0 4px;font-size:14px;font-weight:600;display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline}
+.skill.plain span,.skill.plain span:last-child{font-size:14px;color:var(--fg);white-space:normal}
+.role h4 .rwhen{font-size:12px;font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums}
 .job ul{margin:0;padding-left:18px}
 .job li{margin-bottom:5px}
 .wins{margin-top:14px;background:var(--surface);border-radius:14px;padding:12px 16px}
@@ -66,7 +68,7 @@ aside h2{font-size:18px;margin-bottom:10px}
   <header class="page-head">
     <div class="eyebrow">Resume</div>
     <h1>Mark <span>Hutchinson</span></h1>
-    <p class="sub">Embedded Software Engineer · Groton, CT</p>
+    <p class="sub">Simulation Software Supervisor · Groton, CT</p>
     <div class="contact">
       <span id="email-wrap"><a id="email" href="#">Email</a> <button class="btn copy no-print" id="copyEmail" type="button">Copy</button></span>
       <a href="https://github.com/mhutch14" target="_blank" rel="noopener">GitHub</a>
@@ -80,37 +82,46 @@ aside h2{font-size:18px;margin-bottom:10px}
     <div>
       <section>
         <h2>Summary</h2>
-        <p class="summary">Software engineer with extensive experience designing, developing and testing embedded systems for military applications. A proven leader who drives complex projects to completion under tight deadlines, and a strong communicator who leads cross-functional teams and works with stakeholders to meet system requirements.</p>
+        <p class="summary">Software engineering leader with nearly nine years delivering safety-critical software for military customers. At General Dynamics Electric Boat I have supervised teams of up to 23 engineers on the Columbia-class submarine program, owning schedules, customer communication and risk from requirements through test. I build plans from effort estimates, report problems early, and keep software, systems engineering, test and customer teams working toward the same delivery dates.</p>
       </section>
 
       <section>
         <h2>Experience</h2>
         <div class="job">
           <div class="when">Apr 2020 – Present</div>
-          <h3>Specialist Embedded Software Engineer / Columbia Class Software Supervisor</h3>
+          <h3>Specialist Embedded Software Engineer</h3>
           <div class="org">General Dynamics Electric Boat · New London, CT</div>
           <div class="role">
-            <h4>Remote Interface Controller Project Lead</h4>
+            <h4>Simulation Software Supervisor <span class="rwhen">Aug 2026 – Present</span></h4>
             <ul>
-              <li>Led a team of ten software engineers developing and integrating a standalone IO controller for real-time signal processing in a safety-critical submarine control system.</li>
-              <li>Managed full lifecycle development of software units to system requirements and rigorous safety standards.</li>
-              <li>Coordinated across departments on software design, implementation and integration.</li>
+              <li>Lead 12 engineers developing simulation software that replicates submarine systems, so tactical software can be fully tested without a physical vessel.</li>
+              <li>Work with tactical software, systems engineering and test teams to weigh the technical, cost and schedule impact of requirements across the lifecycle.</li>
+              <li>Assign work, set priorities, mentor engineers and evaluate performance.</li>
             </ul>
           </div>
           <div class="role">
             <h4>Columbia Class Software Supervisor</h4>
             <ul>
-              <li>Supervised 23 engineers developing and integrating software for major subcomponents of the Columbia-class submarine.</li>
-              <li>Primary point of contact for internal and external customers, ensuring compliance with Fly-By-Wire guidelines.</li>
-              <li>Mentored and trained the team across multiple software builds.</li>
+              <li>Supervised 23 engineers integrating ship control software for major subcomponents of the Columbia-class submarine across multiple software builds.</li>
+              <li>Primary internal and external customer point of contact: presented status to managers and customers and ensured compliance with Fly-By-Wire guidelines.</li>
+              <li>When schedules slipped, developed corrective actions to recover and hit committed delivery dates, and raised problems early.</li>
+            </ul>
+          </div>
+          <div class="role">
+            <h4>Remote Interface Controller Project Lead</h4>
+            <ul>
+              <li>Led 10 engineers developing and integrating a standalone IO controller for real-time signal processing in a safety-critical submarine control system.</li>
+              <li>Built the schedule from task effort estimates, tracked progress against it, and briefed leadership and customers on risks and recovery actions.</li>
+              <li>Owned full-lifecycle development of software units to system requirements and rigorous safety standards, coordinating design, implementation and integration across departments.</li>
             </ul>
           </div>
           <div class="wins">
             <div class="eyebrow">Accomplishments</div>
             <ul>
-              <li>Brought the Remote Interface Controller project to a critical testing milestone on schedule.</li>
+              <li>Delivered a full build of the Columbia-class ship control software while meeting a major testing milestone.</li>
               <li>Delivered critical milestones on time for two of four Columbia-class software subcomponents.</li>
-              <li>Onboarded and trained 8 new team members, and rebuilt the onboarding process and training resources for new hires.</li>
+              <li>Brought the Remote Interface Controller project to a critical testing milestone on schedule.</li>
+              <li>Onboarded and trained 12 new engineers, and streamlined onboarding and training resources so new hires contribute sooner.</li>
             </ul>
           </div>
         </div>
@@ -143,19 +154,28 @@ aside h2{font-size:18px;margin-bottom:10px}
         <span class="mono" style="font-size:12px">Aug 2014 – Dec 2017</span>
       </div>
       <div class="panel">
-        <h2>Skills</h2>
+        <h2>Program skills</h2>
+        <div class="skill plain"><span>Scheduling from effort estimates</span></div>
+        <div class="skill plain"><span>Risk and schedule recovery</span></div>
+        <div class="skill plain"><span>Customer and leadership briefings</span></div>
+        <div class="skill plain"><span>Requirements tradeoffs (cost, schedule, technical)</span></div>
+        <div class="skill plain"><span>Team leadership and mentoring</span></div>
+      </div>
+      <div class="panel">
+        <h2>Tools</h2>
+        <div class="skill"><span>Microsoft Project</span><span>2+ yrs</span></div>
+        <div class="skill"><span>Jira / Confluence</span><span>1+ yr</span></div>
         <div class="skill"><span>Ada</span><span>4+ yrs</span></div>
         <div class="skill"><span>Git / GitLab</span><span>4+ yrs</span></div>
         <div class="skill"><span>Linux</span><span>4+ yrs</span></div>
-        <div class="skill"><span>Microsoft Project</span><span>2+ yrs</span></div>
-        <div class="skill"><span>Jira / Confluence</span><span>1+ yr</span></div>
         <div class="skill"><span>JavaScript, Python, SQL</span><span>2 yrs</span></div>
       </div>
       <div class="panel">
         <h2>Leadership</h2>
         <div class="skill"><span>Largest team supervised</span><span>23</span></div>
+        <div class="skill"><span>Current team</span><span>12</span></div>
         <div class="skill"><span>Project team led</span><span>10</span></div>
-        <div class="skill"><span>New hires onboarded</span><span>8</span></div>
+        <div class="skill"><span>New hires onboarded</span><span>12</span></div>
       </div>
     </aside>
   </div>
