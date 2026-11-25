@@ -10,18 +10,18 @@
 *{box-sizing:border-box} [hidden]{display:none!important} img{max-width:100%}
 /* Layout: weekly plan + recipes in the main column, grocery checklist in a sticky side column (moves to the top on phones). */
 :root{
-  --bg:#f6f7f2; --surface:#ffffff; --fg:#1d2a21; --muted:#5d6b61; --line:#dfe4da;
-  --accent:#2f6b3c; --accent-soft:#e3efe2; --tomato:#c8553d; --done:#9aa59c;
+  --bg:#f4f6fa; --surface:#ffffff; --fg:#101828; --muted:#5b6476; --line:#dde3ee;
+  --accent:#2563eb; --accent-soft:#e7eefd; --tomato:#c2410c; --done:#98a2b3;
   --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --body:"Inter", system-ui, -apple-system, sans-serif;
   --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#141a16; --surface:#1c241f; --fg:#e6ece6; --muted:#9db0a2; --line:#2e3a32;
-  --accent:#7cc48a; --accent-soft:#233528; --tomato:#e88a72; --done:#5f6e64; color-scheme:dark}}
+  --bg:#0b1220; --surface:#121b2e; --fg:#e5eaf3; --muted:#94a3b8; --line:#23304a;
+  --accent:#60a5fa; --accent-soft:#15233d; --tomato:#fb923c; --done:#5b6880; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#141a16; --surface:#1c241f; --fg:#e6ece6; --muted:#9db0a2; --line:#2e3a32;
-  --accent:#7cc48a; --accent-soft:#233528; --tomato:#e88a72; --done:#5f6e64; color-scheme:dark}
+  --bg:#0b1220; --surface:#121b2e; --fg:#e5eaf3; --muted:#94a3b8; --line:#23304a;
+  --accent:#60a5fa; --accent-soft:#15233d; --tomato:#fb923c; --done:#5b6880; color-scheme:dark}
 
 .back{max-width:1180px;margin:0 auto 12px;font-size:13px}.back a{color:var(--accent)}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55;
