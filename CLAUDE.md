@@ -8,7 +8,7 @@ Mark's personal website, "Odds & Ends", served by GitHub Pages from the `master`
 |---|---|---|
 | `/` | `index.html` | Home: site name, tool cards, short About with resume link |
 | `/resume/` | `resume/index.html` | Full resume (has a print / save-as-PDF button) |
-| `/pages/` | `pages/index.html` | "Life" hub: list of tool pages |
+| `/pages/` | `pages/index.html` | "Tools" hub: list of tool pages |
 | `/pages/<name>.html` | `pages/<name>.html` | One life tool per file (meal plan, budget, ...) |
 
 README.md has the full file list, how-to-use guide and design notes. Keep it current when you add or change pages.
@@ -24,7 +24,7 @@ Keep the `/pages/` URL for life tools: Supabase sign-in redirects and bookmarks 
    ```html
    <nav class="site-nav" style="--maxw:1100px" aria-label="Site">
      <a class="brand" href="/">Odds &amp; Ends</a>
-     <div class="links"><a href="/">Home</a><a href="/pages/" aria-current="page">Life</a><a href="/resume/">Resume</a></div>
+     <div class="links"><a href="/">Home</a><a href="/pages/" aria-current="page">Tools</a><a href="/resume/">Resume</a></div>
    </nav>
    ```
    If a new top-level section is added, add its link to the nav on every page.

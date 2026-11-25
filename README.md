@@ -8,7 +8,7 @@
 |---|---|
 | Home | https://mhutch14.github.io/ |
 | Resume | https://mhutch14.github.io/resume/ |
-| Life tools | https://mhutch14.github.io/pages/ |
+| Tools | https://mhutch14.github.io/pages/ |
 | Ledger (monthly budget) | https://mhutch14.github.io/pages/budget.html |
 | Mise (weekly meal plan) | https://mhutch14.github.io/pages/meal-plan.html |
 
@@ -17,7 +17,7 @@
 ## How to use the site
 
 ### Everywhere
-- **Menu:** Home, Life and Resume are at the top of every page.
+- **Menu:** Home, Tools and Resume are at the top of every page.
 - **Light / dark:** the round button at the end of the menu cycles **Auto** (follows your device), **Light** and **Dark**. Each browser remembers your choice.
 - **Syncing between devices:** the meal plan and the budget each have a **"Sign in to sync"** box. Enter your email, open the link Supabase emails you *on the same device*, and that browser stays signed in. Changes then save to your account and show up on your other signed-in devices when you open or switch back to the page. Signed out or offline, each page still works and saves to that device only.
 - **Seeing an old version?** Browsers can keep a page for up to 10 minutes. Force a refresh with **Ctrl+Shift+R** (**Cmd+Shift+R** on a Mac), or open the page in a new tab on a phone.
@@ -90,7 +90,7 @@ Modeled on modern product sites like apple.com: light gray and white (true black
 ```
 index.html                  Home page: site name, tool cards, short About with resume link
 resume/index.html           Resume, with print / save-as-PDF
-pages/index.html            Life tools hub: one card per tool
+pages/index.html            Tools hub: one card per tool
 pages/budget.html           Monthly budget page (UI and events)
 pages/budget-core.js        Budget logic with no DOM access: parsing, money format, due-date status,
                             totals, import checks, example data. Used by the page and the unit tests.

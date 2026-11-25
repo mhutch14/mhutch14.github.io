@@ -8,7 +8,7 @@ let server, browser;
 test.before(async () => { server = await startServer(); browser = await launch(); });
 test.after(async () => { await browser?.close(); await server?.close(); });
 
-const SECTION = { "/": "Home", "/resume/": "Resume", "/pages/": "Life", "/pages/budget.html": "Life", "/pages/meal-plan.html": "Life" };
+const SECTION = { "/": "Home", "/resume/": "Resume", "/pages/": "Tools", "/pages/budget.html": "Tools", "/pages/meal-plan.html": "Tools" };
 
 for (const path of PAGES) {
   test(`${path} loads without errors, has a title, nav and footer`, async () => {
