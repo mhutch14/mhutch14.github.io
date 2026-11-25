@@ -11,12 +11,12 @@ Mark's personal website, served by GitHub Pages from the `master` branch at http
 | `/pages/` | `pages/index.html` | "Life" hub: list of tool pages |
 | `/pages/<name>.html` | `pages/<name>.html` | One life tool per file (meal plan, budget, ...) |
 
-Shared files: `assets/site.css` (theme tokens, nav, cards, buttons), `pages/sync.js` + `pages/vendor/` (Supabase sync), `supabase/setup.sql`.
+Shared files: `assets/site.css` (theme tokens, nav, cards, buttons), `assets/theme.js` (light/dark switch), `pages/sync.js` + `pages/vendor/` (Supabase sync), `supabase/setup.sql`.
 Keep the `/pages/` URL for life tools: Supabase sign-in redirects and bookmarks point there.
 
 ## Every page
 
-1. Full `<!doctype html>` page with charset and viewport meta, the Google Fonts link (Inter only, as a fallback for the system font) and `<link rel="stylesheet" href="/assets/site.css?v=N">`. Put page-specific CSS in a `<style>` after it. Use the tokens from `site.css`, never hard-coded colors. The look is modeled on modern product sites like apple.com: light gray/white (black in dark mode), near-black text, one blue used only for clickable things, the system font (Inter fallback) in semibold, pill buttons, borderless rounded cards. Avoid display fonts, monospace text, uppercase letter-spaced labels, colored words in headings, and decorative rules.
+1. Full `<!doctype html>` page with charset and viewport meta, the Google Fonts link (Inter only, as a fallback for the system font) `<link rel="stylesheet" href="/assets/site.css?v=N">`, and right after it `<script src="/assets/theme.js?v=N"></script>` (the Auto/Light/Dark switch; it adds itself to the nav and must load in `<head>` so there's no flash of the wrong theme). Put page-specific CSS in a `<style>` after it. Use the tokens from `site.css`, never hard-coded colors. The look is modeled on modern product sites like apple.com: light gray/white (black in dark mode), near-black text, one blue used only for clickable things, the system font (Inter fallback) in semibold, pill buttons, borderless rounded cards. Avoid display fonts, monospace text, uppercase letter-spaced labels, colored words in headings, and decorative rules.
 2. Start the body with the shared nav, with `aria-current="page"` on the current section:
    ```html
    <nav class="site-nav" style="--maxw:1100px" aria-label="Site">
@@ -26,7 +26,8 @@ Keep the `/pages/` URL for life tools: Supabase sign-in redirects and bookmarks 
    ```
    If a new top-level section is added, add its link to the nav on every page.
 3. End with `<footer class="site-foot">`.
-4. When `site.css` or `sync.js` changes, bump its `?v=N` on every page that loads it so browsers fetch the new copy.
+4. Dark colors are defined twice in `site.css` (device setting and `[data-theme="dark"]`); keep both blocks identical.
+5. When `site.css`, `theme.js` or `sync.js` changes, bump its `?v=N` on every page that loads it so browsers fetch the new copy.
 
 ## Adding a life tool
 

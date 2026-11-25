@@ -21,12 +21,20 @@
   --radius:18px;
   --maxw:1180px;
 }
-@media (prefers-color-scheme: dark){:root{
+/* dark: follows the device unless the theme switch (assets/theme.js) picked light or dark */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#000000; --surface:#1c1c1e; --fg:#f5f5f7; --muted:#a1a1a6; --line:#38383a;
   --accent:#2997ff; --accent-soft:#0d2a47; --on-accent:#ffffff;
   --tomato:#a1a1a6; --done:#6e6e73;
   --good:#30d158; --good-soft:#0f2e1a; --bad:#ff453a; --bad-soft:#3b1211;
   color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#000000; --surface:#1c1c1e; --fg:#f5f5f7; --muted:#a1a1a6; --line:#38383a;
+  --accent:#2997ff; --accent-soft:#0d2a47; --on-accent:#ffffff;
+  --tomato:#a1a1a6; --done:#6e6e73;
+  --good:#30d158; --good-soft:#0f2e1a; --bad:#ff453a; --bad-soft:#3b1211;
+  color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -50,6 +58,10 @@ input[type=checkbox]{accent-color:var(--accent)}
 .site-nav .links a{color:var(--muted);font-size:14px;padding:4px 0}
 .site-nav .links a:hover{color:var(--fg);text-decoration:none}
 .site-nav .links a[aria-current="page"]{color:var(--fg);font-weight:500}
+.site-nav .links{align-items:center}
+.theme-toggle{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:13px;color:var(--muted);background:var(--surface);
+  border:1px solid var(--line);border-radius:980px;padding:4px 10px 4px 8px;cursor:pointer;line-height:1.2}
+.theme-toggle:hover{color:var(--fg);border-color:var(--muted)}
 
 /* shared building blocks */
 .page{max-width:var(--maxw);margin:0 auto}
