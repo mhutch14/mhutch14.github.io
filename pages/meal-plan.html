@@ -6,6 +6,7 @@
 <title>Quick Week Meal Plan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="/assets/site.css?v=1">
 <style>
 *{box-sizing:border-box} [hidden]{display:none!important} img{max-width:100%}
 /* Layout: weekly plan + recipes in the main column, grocery checklist in a sticky side column (moves to the top on phones). */
@@ -23,9 +24,8 @@
   --bg:#0b1220; --surface:#121b2e; --fg:#e5eaf3; --muted:#94a3b8; --line:#23304a;
   --accent:#60a5fa; --accent-soft:#15233d; --tomato:#fb923c; --done:#5b6880; color-scheme:dark}
 
-.back{max-width:1180px;margin:0 auto 12px;font-size:13px}.back a{color:var(--accent)}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 60px}
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 60px}
 .wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:36px;align-items:start}
 header{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:16px;border-bottom:2px solid var(--fg);padding-bottom:16px}
 h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,5vw,46px);line-height:1;margin:0;letter-spacing:-.02em;text-wrap:balance}
@@ -106,7 +106,10 @@ label.item.pantry .nm::after{content:"check pantry";margin-left:6px;font-size:10
 </style>
 </head>
 <body>
-<p class="back"><a href="./">&larr; All pages</a></p>
+<nav class="site-nav" style="--maxw:1180px" aria-label="Site">
+  <a class="brand" href="/">Mark <span>Hutchinson</span></a>
+  <div class="links"><a href="/">Home</a><a href="/resume/">Resume</a><a href="/pages/" aria-current="page">Life</a></div>
+</nav>
 
 <div class="wrap">
   <header>
@@ -162,7 +165,7 @@ label.item.pantry .nm::after{content:"check pantry";margin-left:6px;font-size:10
 </div>
 
 <script src="vendor/supabase-2.119.0.js"></script>
-<script src="sync.js?v=2"></script>
+<script src="sync.js?v=4"></script>
 <script>
 const WEEK = [
   ["Sun", null, null, ["Veggie omelet, toast & fruit", 15]],

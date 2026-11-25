@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mark Hutchinson Resume</title>
+<meta name="description" content="Resume of Mark Hutchinson, embedded software engineer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="/assets/site.css?v=1">
+<style>
+.page{--maxw:980px}
+.contact{display:flex;gap:8px 18px;flex-wrap:wrap;margin-top:14px;font-size:14px;align-items:center}
+.contact a{font-weight:600;text-decoration:none}
+.contact .copy{font-size:12px;padding:3px 8px}
+.toolbar{display:flex;gap:8px;margin-top:16px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:40px;align-items:start}
+@media (max-width:820px){.layout{grid-template-columns:minmax(0,1fr)}}
+section{margin-bottom:34px}
+.summary{font-size:17px;line-height:1.6;margin:0;max-width:68ch}
+.job{position:relative;padding-left:22px;border-left:2px solid var(--line);padding-bottom:26px}
+.job:last-child{padding-bottom:0}
+.job::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
+.job .when{font-family:var(--mono);font-size:12px;color:var(--tomato)}
+.job h3{font-family:var(--display);font-weight:600;font-size:20px;line-height:1.25;margin:2px 0 0}
+.job .org{color:var(--muted);font-size:14px;margin-bottom:10px}
+.role{margin-top:12px}
+.role h4{margin:0 0 4px;font-size:14px;font-weight:600}
+.job ul{margin:0;padding-left:18px}
+.job li{margin-bottom:5px}
+.wins{margin-top:12px;background:var(--accent-soft);border-radius:8px;padding:10px 14px}
+.wins .eyebrow{color:var(--accent)}
+.wins ul{margin-top:4px}
+aside .panel{padding:16px 18px;margin-bottom:16px}
+aside h2{font-size:18px;margin-bottom:10px}
+.skill{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.skill:last-child{border-bottom:0}
+.skill span:last-child{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.edu b{display:block}
+.edu span{color:var(--muted);font-size:14px;display:block}
+.toast{font-size:12px;color:var(--good)}
+@media print{
+  .page{max-width:none}
+  .layout{grid-template-columns:minmax(0,1fr) 200px;gap:24px}
+  .wins{background:none;border:1px solid #ccc}
+  .job::before{background:#fff}
+  section{margin-bottom:18px}
+}
+</style>
+</head>
+<body>
+<nav class="site-nav" style="--maxw:980px" aria-label="Site">
+  <a class="brand" href="/">Mark <span>Hutchinson</span></a>
+  <div class="links"><a href="/">Home</a><a href="/resume/" aria-current="page">Resume</a><a href="/pages/">Life</a></div>
+</nav>
+
+<main class="page">
+  <header class="page-head">
+    <div class="eyebrow">Resume</div>
+    <h1>Mark <span>Hutchinson</span></h1>
+    <p class="sub">Embedded Software Engineer · Groton, CT</p>
+    <div class="contact">
+      <span id="email-wrap"><a id="email" href="#">Email</a> <button class="btn copy no-print" id="copyEmail" type="button">Copy</button></span>
+      <a href="https://github.com/mhutch14" target="_blank" rel="noopener">GitHub</a>
+      <a id="linkedin" href="#" target="_blank" rel="noopener" hidden>LinkedIn</a>
+      <span class="toast" id="toast" hidden></span>
+    </div>
+    <div class="toolbar no-print"><button class="btn" id="printBtn" type="button">Print or save as PDF</button></div>
+  </header>
+
+  <div class="layout">
+    <div>
+      <section>
+        <h2>Summary</h2>
+        <p class="summary">Software engineer with extensive experience designing, developing and testing embedded systems for military applications. A proven leader who drives complex projects to completion under tight deadlines, and a strong communicator who leads cross-functional teams and works with stakeholders to meet system requirements.</p>
+      </section>
+
+      <section>
+        <h2>Experience</h2>
+        <div class="job">
+          <div class="when">Apr 2020 – Present</div>
+          <h3>Specialist Embedded Software Engineer / Columbia Class Software Supervisor</h3>
+          <div class="org">General Dynamics Electric Boat · New London, CT</div>
+          <div class="role">
+            <h4>Remote Interface Controller Project Lead</h4>
+            <ul>
+              <li>Led a team of ten software engineers developing and integrating a standalone IO controller for real-time signal processing in a safety-critical submarine control system.</li>
+              <li>Managed full lifecycle development of software units to system requirements and rigorous safety standards.</li>
+              <li>Coordinated across departments on software design, implementation and integration.</li>
+            </ul>
+          </div>
+          <div class="role">
+            <h4>Columbia Class Software Supervisor</h4>
+            <ul>
+              <li>Supervised 23 engineers developing and integrating software for major subcomponents of the Columbia-class submarine.</li>
+              <li>Primary point of contact for internal and external customers, ensuring compliance with Fly-By-Wire guidelines.</li>
+              <li>Mentored and trained the team across multiple software builds.</li>
+            </ul>
+          </div>
+          <div class="wins">
+            <div class="eyebrow">Accomplishments</div>
+            <ul>
+              <li>Brought the Remote Interface Controller project to a critical testing milestone on schedule.</li>
+              <li>Delivered critical milestones on time for two of four Columbia-class software subcomponents.</li>
+              <li>Onboarded and trained 8 new team members, and rebuilt the onboarding process and training resources for new hires.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="job">
+          <div class="when">Jan 2018 – Jan 2020</div>
+          <h3>Software Engineer, Support</h3>
+          <div class="org">Trew Automation · Mason, OH</div>
+          <ul>
+            <li>Supported and modified existing control systems in JavaScript, Python and SQL to meet customer needs and system requirements.</li>
+            <li>Ran in-house and on-site system testing for smooth rollouts.</li>
+            <li>Worked directly with clients to resolve technical issues and add features.</li>
+          </ul>
+          <div class="wins">
+            <div class="eyebrow">Accomplishments</div>
+            <ul>
+              <li>Commissioned and deployed 6 systems, adding custom features and fixing issues.</li>
+              <li>Resolved 160+ customer support cases.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside>
+      <div class="panel edu">
+        <h2>Education</h2>
+        <b>B.E. Computer Engineering</b>
+        <span>Miami University · Oxford, OH</span>
+        <span class="mono" style="font-size:12px">Aug 2014 – Dec 2017</span>
+      </div>
+      <div class="panel">
+        <h2>Skills</h2>
+        <div class="skill"><span>Ada</span><span>4+ yrs</span></div>
+        <div class="skill"><span>Git / GitLab</span><span>4+ yrs</span></div>
+        <div class="skill"><span>Linux</span><span>4+ yrs</span></div>
+        <div class="skill"><span>Microsoft Project</span><span>2+ yrs</span></div>
+        <div class="skill"><span>Jira / Confluence</span><span>1+ yr</span></div>
+        <div class="skill"><span>JavaScript, Python, SQL</span><span>2 yrs</span></div>
+      </div>
+      <div class="panel">
+        <h2>Leadership</h2>
+        <div class="skill"><span>Largest team supervised</span><span>23</span></div>
+        <div class="skill"><span>Project team led</span><span>10</span></div>
+        <div class="skill"><span>New hires onboarded</span><span>8</span></div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer class="site-foot" style="--maxw:980px"><span>Mark Hutchinson</span><span><a href="/">Home</a> · <a href="/pages/">Life</a></span></footer>
+
+<script>
+// Email is assembled here so simple scrapers reading the HTML don't pick it up.
+const LINKEDIN = ""; // e.g. "https://www.linkedin.com/in/your-name"
+const addr = ["mark.hutch12", "gmail.com"].join("@");
+const a = document.getElementById("email");
+a.textContent = addr; a.href = "mailto:" + addr;
+if (LINKEDIN) { const l = document.getElementById("linkedin"); l.href = LINKEDIN; l.hidden = false; }
+const toast = document.getElementById("toast");
+document.getElementById("copyEmail").onclick = () => {
+  navigator.clipboard.writeText(addr).then(() => { toast.textContent = "Copied"; toast.hidden = false; setTimeout(() => toast.hidden = true, 2000); },
+    () => { const r = document.createRange(); r.selectNodeContents(a); getSelection().removeAllRanges(); getSelection().addRange(r); });
+};
+document.getElementById("printBtn").onclick = () => window.print();
+</script>
+</body>
+</html>

@@ -18,7 +18,8 @@
 
   const css = `
   .ps{display:flex;flex-direction:column;gap:6px;font-size:13px}
-  .ps form{display:flex;gap:6px;flex-wrap:wrap}
+  .ps form{display:flex;gap:6px;flex-wrap:wrap;max-width:480px}
+  .ps form button{font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--accent,#2a7);background:var(--accent,#2a7);color:var(--bg,#fff);cursor:pointer}
   .ps input{flex:1 1 160px;min-width:0;font:inherit;font-size:13px;padding:7px 10px;border-radius:8px;border:1px solid var(--line,#ccc);background:var(--bg,#fff);color:var(--fg,#111)}
   .ps .row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
   .ps .st{color:var(--muted,#666)}
@@ -44,7 +45,7 @@
       m.querySelector("button").onclick = async () => { await client.auth.signOut(); };
       ui.st = m.querySelector(".st");
     } else {
-      m.innerHTML = `<div class="ps"><span class="st">Sign in to sync your checkmarks across devices.</span>
+      m.innerHTML = `<div class="ps"><span class="st">Sign in to sync this page across your devices.</span>
         <form><input type="email" id="ps-email" required placeholder="Email address" autocomplete="email" aria-label="Email address">
         <button type="submit">Email me a link</button></form></div>`;
       ui.st = m.querySelector(".st");

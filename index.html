@@ -2,13 +2,72 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mark's Pages</title>
-<meta http-equiv="refresh" content="0; url=pages/">
-<link rel="canonical" href="pages/">
-<style>:root{background:#f4f6fa;color:#101828}@media (prefers-color-scheme: dark){:root{background:#0b1220;color:#e5eaf3;color-scheme:dark}}a{color:#2563eb}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mark Hutchinson</title>
+<meta name="description" content="Mark Hutchinson, embedded software engineer. Resume and everyday tools.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="/assets/site.css?v=1">
+<style>
+.page{--maxw:980px}
+.hero{padding-block:24px 36px;border-bottom:2px solid var(--fg);margin-bottom:32px}
+.hero h1{font-size:clamp(40px,8vw,72px)}
+.hero .role{font-family:var(--display);font-weight:600;font-size:clamp(18px,2.6vw,24px);color:var(--muted);margin:10px 0 0}
+.hero .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.hero .actions .btn{font-size:14px;padding:9px 16px}
+.facts{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+@media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.section-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
+.section-head a{font-size:13px;font-weight:600;text-decoration:none}
+.snap{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.snap .job b{display:block;font-weight:600}
+.snap .job span{color:var(--muted);font-size:14px}
+.snap .job time{font-family:var(--mono);font-size:12px;color:var(--tomato)}
+</style>
 </head>
 <body>
-<p><a href="pages/">Go to my pages</a></p>
+<nav class="site-nav" style="--maxw:980px" aria-label="Site">
+  <a class="brand" href="/">Mark <span>Hutchinson</span></a>
+  <div class="links"><a href="/" aria-current="page">Home</a><a href="/resume/">Resume</a><a href="/pages/">Life</a></div>
+</nav>
+
+<main class="page">
+  <section class="hero">
+    <div class="eyebrow">Groton, Connecticut</div>
+    <h1>Mark <span>Hutchinson</span></h1>
+    <p class="role">Embedded software engineer and team lead, building safety-critical control systems.</p>
+    <div class="facts">
+      <span class="tag">Computer Engineering, Miami University</span>
+      <span class="tag">Software engineer since 2018</span>
+      <span class="tag">Ada · Linux · Git</span>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="/resume/">View resume</a>
+      <a class="btn" href="https://github.com/mhutch14" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section>
+      <div class="section-head"><h2>Work</h2><a href="/resume/">Full resume &rarr;</a></div>
+      <div class="panel snap">
+        <div class="job"><time>2020 – now</time><b>Specialist Embedded Software Engineer</b><span>General Dynamics Electric Boat · Led teams of up to 23 engineers</span></div>
+        <div class="job"><time>2018 – 2020</time><b>Software Engineer, Support</b><span>Trew Automation · Control systems in JavaScript, Python and SQL</span></div>
+        <div class="job"><time>2014 – 2017</time><b>B.E. Computer Engineering</b><span>Miami University, Oxford, Ohio</span></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Life</h2><a href="/pages/">All tools &rarr;</a></div>
+      <ul class="cards">
+        <li><a class="card" href="/pages/budget.html"><b>Monthly Budget</b><span class="desc">Bills, due dates and spending by category.</span><span class="go" aria-hidden="true">&rarr;</span></a></li>
+        <li><a class="card" href="/pages/meal-plan.html"><b>Quick Week Meal Plan</b><span class="desc">A week of healthy meals and a grocery checklist.</span><span class="go" aria-hidden="true">&rarr;</span></a></li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<footer class="site-foot" style="--maxw:980px"><span>Mark Hutchinson</span><span><a href="/resume/">Resume</a> · <a href="/pages/">Life</a> · <a href="https://github.com/mhutch14" target="_blank" rel="noopener">GitHub</a></span></footer>
 </body>
 </html>

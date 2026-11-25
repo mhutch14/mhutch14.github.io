@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monthly Budget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="/assets/site.css?v=1">
+<style>
+.page{--maxw:1100px}
+.head-row{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
+.month{display:flex;align-items:center;gap:6px}
+.month b{font-family:var(--display);font-size:20px;min-width:9.5em;text-align:center}
+.month .btn{padding:6px 11px}
+.note{font-size:13px;color:var(--muted);margin:10px 0 0}
+.note.example{color:var(--tomato)}
+
+/* summary tiles */
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:28px}
+@media (max-width:820px){.summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{padding:14px 16px}
+.tile .eyebrow{display:block;margin-bottom:4px}
+.tile{min-width:0}
+.tile .v{overflow-wrap:anywhere;font-family:var(--mono);font-size:24px;font-variant-numeric:tabular-nums;line-height:1.2}
+.tile .s{font-size:12px;color:var(--muted)}
+.tile.left .v{color:var(--good)}
+.tile.left.neg .v{color:var(--bad)}
+.tile input{width:100%;font-family:var(--mono);font-size:24px;line-height:1.2;border:0;border-bottom:1px dashed var(--line);background:transparent;color:var(--fg);padding:0;font-variant-numeric:tabular-nums}
+.tile input:focus{outline:none;border-bottom-color:var(--accent)}
+
+.cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.sec-head .meta{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* bills */
+.list{padding:4px 0}
+.bill,.cat{display:grid;align-items:center;gap:8px 10px;padding:10px 16px;border-bottom:1px solid var(--line)}
+.bill:last-child,.cat:last-child{border-bottom:0}
+.bill{grid-template-columns:20px minmax(0,1fr) auto auto}
+.bill input[type=checkbox]{width:18px;height:18px;margin:0;accent-color:var(--accent)}
+.bill .name{font-weight:500}
+.bill.paid .name{text-decoration:line-through;color:var(--done)}
+.bill .due{font-size:12px;color:var(--muted)}
+.amt{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap;text-align:center}
+.pill.paid{background:var(--good-soft);color:var(--good)}
+.pill.soon{background:var(--accent-soft);color:var(--accent)}
+.pill.late{background:var(--bad-soft);color:var(--bad)}
+.pill.later{color:var(--muted);border:1px solid var(--line)}
+
+/* categories */
+.cat{grid-template-columns:minmax(0,1fr) auto}
+.cat .top{display:flex;justify-content:space-between;gap:10px;grid-column:1 / -1}
+.cat .top b{font-weight:500}
+.bar{grid-column:1 / -1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.cat.over .bar i{background:var(--bad)}
+.cat.over .amt{color:var(--bad)}
+.cat .add{grid-column:1 / -1;display:flex;gap:6px}
+.cat .add input{flex:1 1 auto;min-width:0;font-family:var(--mono);font-size:13px;padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.cat .add .btn{padding:5px 10px;font-size:12px;white-space:nowrap}
+.cat .left{font-size:12px;color:var(--muted)}
+
+/* edit mode */
+.edit-row{display:grid;gap:6px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line)}
+.edit-row.b{grid-template-columns:minmax(0,1fr) 92px 64px 30px}
+.edit-row.c{grid-template-columns:minmax(0,1fr) 92px 30px}
+.edit-row input{width:100%;min-width:0;font:inherit;font-size:14px;padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.edit-row input.n{font-family:var(--mono);text-align:right}
+.edit-head{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:0;padding-bottom:0}
+.x{background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer;padding:0;line-height:1}
+.x:hover{color:var(--bad)}
+.foot-actions{display:flex;gap:8px;padding:10px 16px;flex-wrap:wrap}
+#sync{margin-top:12px}
+</style>
+</head>
+<body>
+<nav class="site-nav" style="--maxw:1100px" aria-label="Site">
+  <a class="brand" href="/">Mark <span>Hutchinson</span></a>
+  <div class="links"><a href="/">Home</a><a href="/resume/">Resume</a><a href="/pages/" aria-current="page">Life</a></div>
+</nav>
+
+<main class="page">
+  <header class="page-head">
+    <div class="head-row">
+      <div>
+        <div class="eyebrow">Life · Money</div>
+        <h1>Monthly <span>Budget</span></h1>
+      </div>
+      <div class="month" aria-label="Month">
+        <button class="btn" id="prev" type="button" aria-label="Previous month">&larr;</button>
+        <b id="monthName"></b>
+        <button class="btn" id="next" type="button" aria-label="Next month">&rarr;</button>
+      </div>
+    </div>
+    <p class="note example" id="exampleNote">These are example bills and amounts. Tap "Edit bills & categories" to put in your own.</p>
+    <div id="sync"></div>
+  </header>
+
+  <div class="summary">
+    <label class="panel tile"><span class="eyebrow">Take-home pay</span><input id="income" inputmode="decimal" aria-label="Take-home pay this month"><span class="s">this month, tap to change</span></label>
+    <div class="panel tile"><span class="eyebrow">Bills</span><div class="v" id="tBills"></div><div class="s" id="tBillsS"></div></div>
+    <div class="panel tile"><span class="eyebrow">Spent</span><div class="v" id="tSpent"></div><div class="s" id="tSpentS"></div></div>
+    <div class="panel tile left" id="leftTile"><span class="eyebrow">Left over</span><div class="v" id="tLeft"></div><div class="s">pay − bills − spending</div></div>
+  </div>
+
+  <div class="cols">
+    <section>
+      <div class="sec-head"><h2>Bills</h2><span class="meta" id="billsMeta"></span></div>
+      <div class="panel list" id="bills"></div>
+    </section>
+    <section>
+      <div class="sec-head"><h2>Spending</h2><span class="meta" id="catsMeta"></span></div>
+      <div class="panel list" id="cats"></div>
+    </section>
+  </div>
+  <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn" id="editBtn" type="button">Edit bills &amp; categories</button>
+    <button class="btn" id="resetMonth" type="button">Clear this month</button>
+    <span class="note" id="confirmMsg" hidden style="margin:0;align-self:center"></span>
+  </div>
+</main>
+
+<footer class="site-foot" style="--maxw:1100px"><span>Mark Hutchinson</span><span><a href="/">Home</a> · <a href="/pages/">Life</a></span></footer>
+
+<script src="vendor/supabase-2.119.0.js"></script>
+<script src="sync.js?v=4"></script>
+<script>
+const KEY = "budget-v1";
+const uid = () => Math.random().toString(36).slice(2, 9);
+const EXAMPLE = () => ({
+  example: true,
+  income: 4200,
+  bills: [
+    { id: uid(), name: "Rent", amount: 1450, day: 1 },
+    { id: uid(), name: "Car payment", amount: 320, day: 5 },
+    { id: uid(), name: "Car insurance", amount: 115, day: 12 },
+    { id: uid(), name: "Electric", amount: 90, day: 18 },
+    { id: uid(), name: "Internet", amount: 65, day: 20 },
+    { id: uid(), name: "Phone", amount: 55, day: 22 },
+    { id: uid(), name: "Streaming", amount: 28, day: 26 },
+  ],
+  cats: [
+    { id: uid(), name: "Groceries", planned: 400 },
+    { id: uid(), name: "Gas", planned: 160 },
+    { id: uid(), name: "Eating out", planned: 200 },
+    { id: uid(), name: "Fun & misc", planned: 150 },
+  ],
+  months: {},
+});
+
+let state; try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+if (!state || !Array.isArray(state.bills)) state = EXAMPLE();
+let editing = false;
+const now = new Date();
+let cur = { y: now.getFullYear(), m: now.getMonth() };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const money = n => (n < 0 ? "−$" : "$") + Math.abs(Math.round(n * 100) / 100).toLocaleString("en-US", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+const num = v => { const n = parseFloat(String(v).replace(/[$,\s]/g, "")); return isFinite(n) ? n : 0; };
+const mkey = () => `${cur.y}-${String(cur.m + 1).padStart(2, "0")}`;
+const month = () => (state.months[mkey()] ||= { paid: {}, spent: {} });
+const daysIn = () => new Date(cur.y, cur.m + 1, 0).getDate();
+
+function persist() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  window.PageSync && PageSync.save(state);
+}
+function changed() { if (state.example) { state.example = false; } persist(); render(); }
+
+function billStatus(b, paid) {
+  if (paid) return ["paid", "Paid"];
+  const day = Math.min(b.day || 1, daysIn());
+  const due = new Date(cur.y, cur.m, day);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.round((due - today) / 864e5);
+  if (diff < 0) return ["late", diff === -1 ? "1 day late" : `${-diff} days late`];
+  if (diff === 0) return ["soon", "Due today"];
+  if (diff <= 7) return ["soon", `Due in ${diff} day${diff > 1 ? "s" : ""}`];
+  return ["later", `Due ${due.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`];
+}
+
+function render() {
+  const mo = month();
+  $("monthName").textContent = new Date(cur.y, cur.m, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  $("exampleNote").hidden = !state.example;
+  if (document.activeElement !== $("income")) $("income").value = money(mo.income ?? state.income);
+
+  const bills = [...state.bills].sort((a, b) => (a.day || 0) - (b.day || 0));
+  const billTotal = bills.reduce((s, b) => s + num(b.amount), 0);
+  const paidTotal = bills.filter(b => mo.paid[b.id]).reduce((s, b) => s + num(b.amount), 0);
+  const paidCount = bills.filter(b => mo.paid[b.id]).length;
+  const spent = state.cats.reduce((s, c) => s + num(mo.spent[c.id] || 0), 0);
+  const planned = state.cats.reduce((s, c) => s + num(c.planned), 0);
+  const income = num(mo.income ?? state.income);
+  const left = income - billTotal - spent;
+
+  $("tBills").textContent = money(billTotal);
+  $("tBillsS").textContent = `${money(paidTotal)} paid so far`;
+  $("tSpent").textContent = money(spent);
+  $("tSpentS").textContent = `of ${money(planned)} planned`;
+  $("tLeft").textContent = money(left);
+  $("leftTile").classList.toggle("neg", left < 0);
+  $("billsMeta").textContent = `${paidCount} of ${bills.length} paid`;
+  $("catsMeta").textContent = `${money(Math.max(planned - spent, 0))} left to spend`;
+
+  if (editing) return renderEdit();
+
+  $("bills").innerHTML = bills.length ? bills.map(b => {
+    const p = !!mo.paid[b.id]; const [cls, label] = billStatus(b, p);
+    return `<label class="bill${p ? " paid" : ""}" for="b-${b.id}"><input type="checkbox" id="b-${b.id}" data-bill="${b.id}"${p ? " checked" : ""}>
+      <span><span class="name">${esc(b.name)}</span><span class="due"> · day ${b.day}</span></span>
+      <span class="pill ${cls}">${label}</span><span class="amt">${money(num(b.amount))}</span></label>`;
+  }).join("") : `<p class="note" style="padding:12px 16px">No bills yet. Tap "Edit bills &amp; categories" to add one.</p>`;
+
+  $("cats").innerHTML = state.cats.length ? state.cats.map(c => {
+    const s = num(mo.spent[c.id] || 0), pl = num(c.planned), over = s > pl;
+    const pct = pl ? Math.min(100, s / pl * 100) : (s ? 100 : 0);
+    return `<div class="cat${over ? " over" : ""}">
+      <div class="top"><b>${esc(c.name)}</b><span class="amt">${money(s)} <span style="color:var(--muted)">/ ${money(pl)}</span></span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <form class="add" data-cat="${c.id}"><input id="add-${c.id}" inputmode="decimal" placeholder="Add a purchase ($)" aria-label="Add a purchase to ${esc(c.name)}"><button class="btn" type="submit">Add</button><button class="btn" type="button" data-undo="${c.id}" title="Set this month's total">Set total</button></form>
+      <span class="left">${over ? `${money(s - pl)} over` : `${money(pl - s)} left`}</span></div>`;
+  }).join("") : `<p class="note" style="padding:12px 16px">No spending categories yet.</p>`;
+}
+
+function renderEdit() {
+  $("bills").innerHTML = `<div class="edit-row b edit-head"><span>Bill</span><span>Amount</span><span>Due day</span><span></span></div>` +
+    state.bills.map(b => `<div class="edit-row b" data-id="${b.id}">
+      <input value="${esc(b.name)}" data-f="name" aria-label="Bill name"><input class="n" value="${b.amount}" data-f="amount" inputmode="decimal" aria-label="Amount">
+      <input class="n" value="${b.day}" data-f="day" inputmode="numeric" aria-label="Due day of month"><button class="x" data-del="bill" title="Remove" aria-label="Remove ${esc(b.name)}">&times;</button></div>`).join("") +
+    `<div class="foot-actions"><button class="btn" id="addBill" type="button">+ Add bill</button></div>`;
+  $("cats").innerHTML = `<div class="edit-row c edit-head"><span>Category</span><span>Monthly plan</span><span></span></div>` +
+    state.cats.map(c => `<div class="edit-row c" data-id="${c.id}">
+      <input value="${esc(c.name)}" data-f="name" aria-label="Category name"><input class="n" value="${c.planned}" data-f="planned" inputmode="decimal" aria-label="Planned amount">
+      <button class="x" data-del="cat" title="Remove" aria-label="Remove ${esc(c.name)}">&times;</button></div>`).join("") +
+    `<div class="foot-actions"><button class="btn" id="addCat" type="button">+ Add category</button></div>`;
+}
+
+// ---- events
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.dataset.bill) { const mo = month(); if (t.checked) mo.paid[t.dataset.bill] = true; else delete mo.paid[t.dataset.bill]; changed(); }
+  const row = t.closest(".edit-row[data-id]");
+  if (row && t.dataset.f) {
+    const list = row.classList.contains("b") ? state.bills : state.cats;
+    const item = list.find(x => x.id === row.dataset.id);
+    if (t.dataset.f === "name") item.name = t.value.trim() || "Untitled";
+    else if (t.dataset.f === "day") item.day = Math.max(1, Math.min(31, Math.round(num(t.value)) || 1));
+    else item[t.dataset.f] = num(t.value);
+    state.example = false; persist(); render();
+  }
+});
+document.addEventListener("submit", e => {
+  const f = e.target.closest("form.add"); if (!f) return;
+  e.preventDefault();
+  const inp = f.querySelector("input"); const v = num(inp.value); if (!v) return;
+  const mo = month(); mo.spent[f.dataset.cat] = Math.round((num(mo.spent[f.dataset.cat] || 0) + v) * 100) / 100;
+  inp.value = ""; changed();
+});
+document.addEventListener("click", e => {
+  const t = e.target;
+  if (t.dataset.undo) {
+    const inp = $("add-" + t.dataset.undo); const mo = month();
+    mo.spent[t.dataset.undo] = Math.max(0, num(inp.value)); inp.value = ""; changed();
+  }
+  if (t.dataset.del) {
+    const id = t.closest(".edit-row").dataset.id;
+    if (t.dataset.del === "bill") state.bills = state.bills.filter(b => b.id !== id);
+    else state.cats = state.cats.filter(c => c.id !== id);
+    state.example = false; persist(); render();
+  }
+  if (t.id === "addBill") { state.bills.push({ id: uid(), name: "New bill", amount: 0, day: 1 }); state.example = false; persist(); render(); }
+  if (t.id === "addCat") { state.cats.push({ id: uid(), name: "New category", planned: 0 }); state.example = false; persist(); render(); }
+});
+$("income").addEventListener("focus", e => { e.target.value = num(month().income ?? state.income) || ""; e.target.select(); });
+$("income").addEventListener("change", e => {
+  const v = num(e.target.value); state.income = v; month().income = v; changed();
+});
+$("income").addEventListener("blur", () => render());
+$("editBtn").onclick = () => { editing = !editing; $("editBtn").textContent = editing ? "Done editing" : "Edit bills & categories"; render(); };
+$("prev").onclick = () => { cur.m--; if (cur.m < 0) { cur.m = 11; cur.y--; } render(); };
+$("next").onclick = () => { cur.m++; if (cur.m > 11) { cur.m = 0; cur.y++; } render(); };
+let armed = false;
+$("resetMonth").onclick = () => {
+  const msg = $("confirmMsg");
+  if (!armed) { armed = true; msg.textContent = "Tap again to clear paid bills and spending for this month."; msg.hidden = false; $("resetMonth").textContent = "Yes, clear it";
+    setTimeout(() => { armed = false; msg.hidden = true; $("resetMonth").textContent = "Clear this month"; }, 4000); return; }
+  armed = false; msg.hidden = true; $("resetMonth").textContent = "Clear this month";
+  delete state.months[mkey()]; changed();
+};
+
+render();
+if (window.PageSync) PageSync.init({
+  page: "budget",
+  mount: $("sync"),
+  initial: () => state,
+  onData: d => { if (d && Array.isArray(d.bills)) { state = d; state.months ||= {}; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} render(); } }
+});
+</script>
+</body>
+</html>
