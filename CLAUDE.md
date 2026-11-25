@@ -9,7 +9,8 @@ GitHub Pages site served from the `master` branch at https://mhutch14.github.io.
 
 1. Write it as one file: `pages/<short-name>.html`, with a full `<!doctype html>`, charset and viewport meta, inline CSS/JS, and light and dark themes. The only shared files are `pages/sync.js` and `pages/vendor/` (see below).
 2. Add `<p class="back"><a href="./">&larr; All pages</a></p>` near the top of the body.
-3. Add a card for it at the top of the list in `pages/index.html`.
+3. Add a card for it at the top of the list in `pages/index.html`, copying the existing card's markup (title, date, one-line description, a few short tags, arrow).
+   Use the same color tokens as `pages/meal-plan.html` (slate & blue theme) so every page matches.
 4. Everything here is public. Don't put personal details (email, address, account info) in pages.
 5. Commit and push to `master`. The site updates within a minute or two.
 

@@ -2,34 +2,61 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mark's Pages</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;500;600&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
 <style>
 *{box-sizing:border-box}
-:root{--bg:#f4f6fa;--surface:#fff;--fg:#101828;--muted:#5b6476;--line:#dde3ee;--accent:#2563eb;
-  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif}
-@media (prefers-color-scheme: dark){:root{--bg:#0b1220;--surface:#121b2e;--fg:#e5eaf3;--muted:#94a3b8;--line:#23304a;--accent:#60a5fa;color-scheme:dark}}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
-  padding:40px max(16px,env(safe-area-inset-right,0px)) 60px max(16px,env(safe-area-inset-left,0px))}
-.wrap{max-width:720px;margin:0 auto}
-h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,6vw,44px);margin:0 0 4px;letter-spacing:-.02em}
-p.sub{color:var(--muted);margin:0 0 28px}
-ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
-a.card{display:block;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+/* Same tokens as meal-plan.html */
+:root{
+  --bg:#f4f6fa; --surface:#ffffff; --fg:#101828; --muted:#5b6476; --line:#dde3ee;
+  --accent:#2563eb; --accent-soft:#e7eefd; --tomato:#c2410c;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Inter", system-ui, -apple-system, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0b1220; --surface:#121b2e; --fg:#e5eaf3; --muted:#94a3b8; --line:#23304a;
+  --accent:#60a5fa; --accent-soft:#15233d; --tomato:#fb923c; color-scheme:dark}}
+
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 60px}
+.wrap{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+header{border-bottom:2px solid var(--fg);padding-bottom:16px}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,6vw,50px);line-height:1;margin:6px 0 0;letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);margin:10px 0 0;max-width:60ch}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+a.card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;align-items:start;text-decoration:none;color:inherit;
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;transition:border-color .15s}
 a.card:hover,a.card:focus-visible{border-color:var(--accent);outline:none}
-a.card b{font-family:var(--display);font-size:18px;color:var(--accent)}
-a.card span{display:block;color:var(--muted);font-size:14px}
-a.card time{font-size:12px;color:var(--muted)}
+a.card b{font-family:var(--display);font-weight:600;font-size:20px;line-height:1.2}
+a.card .desc{grid-column:1;color:var(--muted);font-size:14px}
+a.card .tags{grid-column:1;display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tag{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+a.card time{grid-column:2;grid-row:1;font-family:var(--mono);font-size:12px;color:var(--tomato);white-space:nowrap;padding-top:4px}
+a.card .go{grid-column:2;grid-row:2 / span 2;align-self:center;justify-self:end;color:var(--accent);font-size:20px}
+@media (prefers-reduced-motion:reduce){a.card{transition:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Mark's Pages</h1>
-  <p class="sub">Tools and plans I use day to day. Newest first.</p>
+  <header>
+    <div class="eyebrow">Plans and tools I use day to day</div>
+    <h1>Mark's <span>Pages</span></h1>
+    <p class="sub">Newest first. Pages with sync save your progress across your phone and laptop when you're signed in.</p>
+  </header>
   <ul>
     <!-- Add new pages at the top of this list -->
-    <li><a class="card" href="meal-plan.html"><b>Quick Week Meal Plan</b><span>Healthy breakfast, lunch and dinner for the week, with a grocery checklist.</span><time datetime="2026-11-24">Nov 24, 2026</time></a></li>
+    <li><a class="card" href="meal-plan.html">
+      <b>Quick Week Meal Plan</b>
+      <time datetime="2026-11-24">Nov 24, 2026</time>
+      <span class="desc">Healthy breakfast, lunch and dinner for the week, with a grocery checklist.</span>
+      <span class="tags"><span class="tag">Dinners ≤ 30 min</span><span class="tag">Syncs</span></span>
+      <span class="go" aria-hidden="true">&rarr;</span>
+    </a></li>
   </ul>
 </div>
 </body>
