@@ -154,12 +154,15 @@ label.item.pantry .nm::after{content:"check pantry";margin-left:6px;font-size:10
       </div>
       <div class="toast" id="toast" hidden></div>
       <textarea class="copyfallback" id="fallback" hidden readonly aria-label="List text to copy"></textarea>
-      <p class="store">"Copy what's left" gives you plain text you can paste into the shopping list in the <a href="https://stopandshop.com" target="_blank" rel="noopener">Stop &amp; Shop</a> app. Your checkmarks are saved in this browser.</p>
+      <p class="store">"Copy what's left" gives you plain text you can paste into the shopping list in the <a href="https://stopandshop.com" target="_blank" rel="noopener">Stop &amp; Shop</a> app.</p>
+      <div id="sync"></div>
     </div>
     <div class="listbody" id="list"></div>
   </aside>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
+<script src="sync.js"></script>
 <script>
 const WEEK = [
   ["Sun", null, null, ["Veggie omelet, toast & fruit", 15]],
@@ -303,7 +306,8 @@ $("recipes").innerHTML = RECIPES.map(r => `
 const KEY = "quickweek-checked-v1", PKEY = "quickweek-hidepantry";
 let checked = {}, hidePantry = false;
 try { checked = JSON.parse(localStorage.getItem(KEY)) || {}; hidePantry = localStorage.getItem(PKEY) === "1"; } catch(e) {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(checked)); localStorage.setItem(PKEY, hidePantry ? "1" : "0"); } catch(e) {} };
+const saveLocal = () => { try { localStorage.setItem(KEY, JSON.stringify(checked)); localStorage.setItem(PKEY, hidePantry ? "1" : "0"); } catch(e) {} };
+const save = () => { saveLocal(); window.PageSync && PageSync.save({ checked, hidePantry }); };
 
 let n = 0;
 $("list").innerHTML = LIST.map(([aisle, items]) => `<div class="aisle" data-aisle="${esc(aisle)}"><h3>${esc(aisle)}</h3>` +
@@ -339,6 +343,12 @@ $("copyBtn").onclick = () => {
   try { navigator.clipboard.writeText(text).then(() => { fb.hidden = true; flash("Copied. Paste it into your Stop & Shop list."); }, fallback); } catch(e) { fallback(); }
 };
 refresh();
+if (window.PageSync) PageSync.init({
+  page: "meal-plan",
+  mount: $("sync"),
+  initial: () => ({ checked, hidePantry }),
+  onData: d => { checked = d.checked || {}; hidePantry = !!d.hidePantry; saveLocal(); refresh(); }
+});
 </script>
 </body>
 </html>
