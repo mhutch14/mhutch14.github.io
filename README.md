@@ -20,7 +20,7 @@
 ### Everywhere
 - **Menu:** Home, Tools and Resume are at the top of every page.
 - **Light / dark:** the round button at the end of the menu cycles **Auto** (follows your device), **Light** and **Dark**. Each browser remembers your choice.
-- **Syncing between devices:** TimeSheet, Ledger and Mise each have a **"Sign in to sync"** box. Enter your email and tap **Email me a code**. Then either type the code from the email into the page (handy when you read email on your phone but want to sign in on another computer), or open the link in the email *on the same device*. That browser stays signed in. Once signed in, tap **Set password**; then on a device where you can't open your email (like a work computer) tap **Have a password? Sign in with it** and use your email and password. Changes then save to your account and show up on your other signed-in devices when you open or switch back to the page. Signed out or offline, each page still works and saves to that device only.
+- **Syncing between devices:** TimeSheet, Ledger and Mise each have a **"Sign in to sync"** box. Enter your email, tap **Email me a link**, and open the link in that email *on the same device*. That browser stays signed in. Once signed in, tap **Set password**; then on a device where you can't open your email (like a work computer) tap **Have a password? Sign in with it** and use your email and password. Changes then save to your account and show up on your other signed-in devices when you open or switch back to the page. Signed out or offline, each page still works and saves to that device only.
 - **Seeing an old version?** Browsers can keep a page for up to 10 minutes. Force a refresh with **Ctrl+Shift+R** (**Cmd+Shift+R** on a Mac), or open the page in a new tab on a phone.
 
 ### Resume
@@ -90,7 +90,7 @@ Modeled on modern product sites like apple.com: light gray and white (true black
 
 ### Sync design (`pages/sync.js`)
 - One table, `public.page_state (user_id, page, data jsonb, updated_at)`, with one row per user per page (`"budget"`, `"meal-plan"`, `"timesheet"`). The setup SQL is in `supabase/setup.sql`.
-- Sign-in uses the magic link in an email, an emailed one-time code (`verifyOtp`, only if the email template includes `{{ .Token }}`, which needs custom SMTP on Supabase), or email + password (`signInWithPassword`; the password is set while signed in with `updateUser`). Supabase must allow `https://mhutch14.github.io/pages/**` as a redirect URL.
+- Sign-in uses the magic link in an email, or email + password (`signInWithPassword`; the password is set while signed in with `updateUser`). Supabase must allow `https://mhutch14.github.io/pages/**` as a redirect URL.
 - On sign-in, the page loads the saved row. If none exists yet, it uploads what the device already has. After that, every change is saved (debounced, 0.6 seconds) and the page reloads the row whenever you switch back to the tab.
 - If the sign-in library can't load, the page shows a short notice and keeps working locally.
 
@@ -156,7 +156,7 @@ npm run test:all
 
 What's covered:
 - **Unit tests (28):** TimeSheet hours (lunch, WTL, tenths, breaks, holidays), clock-out times, PTO accrual dates and amounts, holiday dates and floating; budget number parsing, money formatting, due-date status (late, today, soon, later, short months), totals, progress bars, adding purchases without rounding drift, and import checking (valid files, bad files, trimming, clamping).
-- **Browser tests (51):**
+- **Browser tests (50):**
   - Every page loads with no errors and has the shared nav and footer.
   - The home page leads with "Odds & Ends" and the tools; the resume keeps Mark's name as its heading.
   - Every page fits a phone screen in dark mode.
@@ -166,7 +166,7 @@ What's covered:
   - Budget: import (including bad files and confirmation), past months, the add-purchase bar, set total and over-plan, paid-bill grouping, collapse remembered after reload, edit mode, take-home pay entry, clear month, and phone layout.
   - Meal plan: checklist, hide pantry, copy list, uncheck all.
   - TimeSheet: first-visit setup, week totals and pace, clock in and reload, editing days and WTL, tabs and archive, phone layout, and sync as page "timesheet".
-  - Sync, with a fake Supabase: sign-in email, signing in with the emailed code or a password (and wrong ones), setting a password, loading saved data, the first upload, sign out, and the offline fallback.
+  - Sync, with a fake Supabase: sign-in link email, signing in with a password (and a wrong one), setting a password, loading saved data, the first upload, sign out, and the offline fallback.
 
 The browser tests never contact the real Supabase project.
 
@@ -184,5 +184,4 @@ Commit and push to `master`. GitHub Pages rebuilds in about a minute. Check prog
 1. Run `supabase/setup.sql` in the Supabase SQL Editor.
 2. Under **Authentication → URL Configuration**, set Site URL to `https://mhutch14.github.io/pages/` and add Redirect URL `https://mhutch14.github.io/pages/**`.
 3. After signing in on your devices, turn off **Allow new users to sign up** under **Authentication → Sign In / Providers**.
-4. Under **Authentication → Emails → Magic Link**, make the email template include the code, `{{ .Token }}`, as well as the link `{{ .ConfirmationURL }}`.
-5. Free-tier projects pause after about a week without use. Un-pause from the Supabase dashboard; no data is lost.
+4. Free-tier projects pause after about a week without use. Un-pause from the Supabase dashboard; no data is lost.

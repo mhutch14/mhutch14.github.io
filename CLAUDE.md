@@ -49,7 +49,7 @@ Pages can sync their state through Supabase with the shared helper `pages/sync.j
 
 - The database has one table, `public.page_state` (user_id, page, data jsonb, updated_at). Row-level security limits each row to the signed-in user who owns it. Its setup is in `supabase/setup.sql`. If you change the table, put the new SQL there too and tell the user to run it in Supabase's SQL Editor.
 - The project URL and the publishable key are at the top of `sync.js`. Both are meant to be public. Never put the `service_role` key or the database password in this repo.
-- Users sign in with the magic link in an email, or with email + password (set from the signed-in sync box). The emailed-code option only works if the Supabase Magic Link template includes `{{ .Token }}`, which Supabase allows only with custom SMTP (not set up). The page URL has to be in Supabase under Authentication → URL Configuration → Redirect URLs (`https://mhutch14.github.io/pages/**` covers every life tool).
+- Users sign in with the magic link in an email, or with email + password (set from the signed-in sync box). The page URL has to be in Supabase under Authentication → URL Configuration → Redirect URLs (`https://mhutch14.github.io/pages/**` covers every life tool).
 - To use it in a page, load `vendor/supabase-2.119.0.js`, then `sync.js?v=N`, then:
   ```js
   PageSync.init({ page: "<short-name>", mount: el, initial: () => state, onData: d => { /* apply d */ } });
