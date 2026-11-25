@@ -13,7 +13,7 @@
  * working without sign-in or offline; it just doesn't sync.
  */
 (function () {
-  const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+  const SUPABASE_URL = "https://wgvauwookwivyaejuohf.supabase.co";
   const SUPABASE_KEY = "sb_publishable_zz-tRudNu-jSFcpIBa_bhQ_ZnFfhtgZ"; // public by design
 
   const css = `
