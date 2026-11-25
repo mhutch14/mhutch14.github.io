@@ -53,12 +53,15 @@ async function openPage(browser, base, opts = {}) {
  * options.remote = data the "server" already has for the page. Upserts are recorded in window.__upserts.
  */
 function fakeSupabase({ signedIn = false, remote = null } = {}) {
-  return `window.__upserts = []; window.__otp = [];
+  return `window.__upserts = []; window.__otp = []; window.__verify = [];
   window.supabase = { createClient() { let cb; return {
     auth: {
       onAuthStateChange(f) { cb = f; setTimeout(() => f("INITIAL_SESSION", ${signedIn} ? { user: { id: "u1", email: "test@example.com" } } : null), 10); },
       signOut() { cb("SIGNED_OUT", null); return Promise.resolve({}); },
-      signInWithOtp(o) { window.__otp.push(o); return Promise.resolve({ error: null }); }
+      signInWithOtp(o) { window.__otp.push(o); return Promise.resolve({ error: null }); },
+      verifyOtp(o) { window.__verify.push(o);
+        if (o.token !== "123456") return Promise.resolve({ error: { message: "Token has expired or is invalid" } });
+        setTimeout(() => cb("SIGNED_IN", { user: { id: "u1", email: o.email } }), 10); return Promise.resolve({ error: null }); }
     },
     from() { return {
       select() { return { eq() { return { maybeSingle() { return Promise.resolve({ data: ${JSON.stringify(remote)} ? { data: ${JSON.stringify(remote)} } : null, error: null }); } }; } }; },

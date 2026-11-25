@@ -2,7 +2,7 @@
  * PageSync: saves a page's state to Supabase so it follows you across devices.
  * Needs the supabase-js UMD build loaded first:
  *   <script src="vendor/supabase-2.119.0.js"></script>
- *   <script src="sync.js?v=2"></script>
+ *   <script src="sync.js?v=6"></script>
  *
  * Usage:
  *   PageSync.init({ page: "meal-plan", mount: el, onData: data => {...} });
@@ -46,17 +46,31 @@
       ui.st = m.querySelector(".st");
     } else {
       m.innerHTML = `<div class="ps"><span class="st">Sign in to sync this page across your devices.</span>
-        <form><input type="email" id="ps-email" required placeholder="Email address" autocomplete="email" aria-label="Email address">
-        <button type="submit">Email me a link</button></form></div>`;
+        <form id="ps-send"><input type="email" id="ps-email" required placeholder="Email address" autocomplete="email" aria-label="Email address">
+        <button type="submit">Email me a code</button></form>
+        <form id="ps-verify" hidden><input id="ps-code" required inputmode="numeric" autocomplete="one-time-code" placeholder="Code from the email" aria-label="Sign-in code">
+        <button type="submit">Sign in</button></form></div>`;
       ui.st = m.querySelector(".st");
-      m.querySelector("form").onsubmit = async e => {
+      const send = m.querySelector("#ps-send"), verify = m.querySelector("#ps-verify");
+      let email = "";
+      send.onsubmit = async e => {
         e.preventDefault();
-        const email = m.querySelector("input").value.trim();
+        email = m.querySelector("#ps-email").value.trim();
         status("Sending…");
         const { error } = await client.auth.signInWithOtp({
           email, options: { emailRedirectTo: location.origin + location.pathname }
         });
-        status(error ? "Couldn't send the link: " + error.message : "Check your email and open the link on this device.", error ? "warn" : "ok");
+        if (error) { status("Couldn't send the email: " + error.message, "warn"); return; }
+        status("Check your email (on any device). Type the code here, or open the link on this device.", "ok");
+        verify.hidden = false; m.querySelector("#ps-code").focus();
+      };
+      // the code lets you sign in here while reading the email somewhere else (e.g. your phone)
+      verify.onsubmit = async e => {
+        e.preventDefault();
+        const token = m.querySelector("#ps-code").value.replace(/\s/g, "");
+        status("Checking code…");
+        const { error } = await client.auth.verifyOtp({ email, token, type: "email" });
+        if (error) status("That code didn't work: " + error.message, "warn");
       };
     }
   }

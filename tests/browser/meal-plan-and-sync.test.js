@@ -73,12 +73,30 @@ test("sync: signed out shows the email sign-in form and sends a link back to thi
   const page = await mealPage({ fakeSupabase: { signedIn: false } });
   await page.waitForSelector("#ps-email");
   await page.fill("#ps-email", "someone@example.com");
-  await page.click("#sync form button");
+  await page.click("#ps-send button");
   await page.waitForFunction(() => window.__otp.length === 1);
   const otp = await page.evaluate(() => window.__otp[0]);
   assert.equal(otp.email, "someone@example.com");
   assert.match(otp.options.emailRedirectTo, /\/pages\/meal-plan\.html$/);
   assert.match(await page.locator("#sync").innerText(), /Check your email/);
+  await page.context().close();
+});
+
+test("sync: the emailed code signs you in without opening the link (wrong code shows an error)", async () => {
+  const page = await mealPage({ fakeSupabase: { signedIn: false, remote: { checked: {}, hidePantry: false } } });
+  await page.waitForSelector("#ps-email");
+  assert.equal(await page.locator("#ps-code").isVisible(), false, "code box appears only after sending");
+  await page.fill("#ps-email", "someone@example.com");
+  await page.click("#ps-send button");
+  await page.waitForSelector("#ps-code", { state: "visible" });
+  await page.fill("#ps-code", "000000");
+  await page.click("#ps-verify button");
+  await page.waitForFunction(() => /didn't work/.test(document.querySelector("#sync").innerText));
+  await page.fill("#ps-code", "123 456");
+  await page.click("#ps-verify button");
+  await page.waitForFunction(() => /Syncing as/.test(document.querySelector("#sync").innerText));
+  const v = await page.evaluate(() => window.__verify);
+  assert.deepEqual(v.at(-1), { email: "someone@example.com", token: "123456", type: "email" });
   await page.context().close();
 });
 
