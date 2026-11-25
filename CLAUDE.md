@@ -16,7 +16,7 @@ Keep the `/pages/` URL for life tools: Supabase sign-in redirects and bookmarks 
 
 ## Every page
 
-1. Full `<!doctype html>` page with charset and viewport meta, the Google Fonts link (Bricolage Grotesque, Inter, JetBrains Mono) and `<link rel="stylesheet" href="/assets/site.css?v=N">`. Put page-specific CSS in a `<style>` after it. Use the color tokens from `site.css` (slate & blue, light and dark), never hard-coded colors.
+1. Full `<!doctype html>` page with charset and viewport meta, the Google Fonts link (Inter only, as a fallback for the system font) and `<link rel="stylesheet" href="/assets/site.css?v=N">`. Put page-specific CSS in a `<style>` after it. Use the tokens from `site.css`, never hard-coded colors. The look is modeled on modern product sites like apple.com: light gray/white (black in dark mode), near-black text, one blue used only for clickable things, the system font (Inter fallback) in semibold, pill buttons, borderless rounded cards. Avoid display fonts, monospace text, uppercase letter-spaced labels, colored words in headings, and decorative rules.
 2. Start the body with the shared nav, with `aria-current="page"` on the current section:
    ```html
    <nav class="site-nav" style="--maxw:1100px" aria-label="Site">

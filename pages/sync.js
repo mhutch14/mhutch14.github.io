@@ -19,12 +19,12 @@
   const css = `
   .ps{display:flex;flex-direction:column;gap:6px;font-size:13px}
   .ps form{display:flex;gap:6px;flex-wrap:wrap;max-width:480px}
-  .ps form button{font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--accent,#2a7);background:var(--accent,#2a7);color:var(--bg,#fff);cursor:pointer}
+  .ps form button{font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:980px;border:1px solid var(--accent,#0071e3);background:var(--accent,#0071e3);color:var(--on-accent,#fff);cursor:pointer}
   .ps input{flex:1 1 160px;min-width:0;font:inherit;font-size:13px;padding:7px 10px;border-radius:8px;border:1px solid var(--line,#ccc);background:var(--bg,#fff);color:var(--fg,#111)}
   .ps .row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
   .ps .st{color:var(--muted,#666)}
   .ps .st.ok::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent,#2a7);margin-right:6px;vertical-align:1px}
-  .ps .st.warn{color:var(--tomato,#c53)}
+  .ps .st.warn{color:var(--bad,#d70015)}
   .ps .link{background:none;border:0;padding:0;color:var(--accent,#2a7);font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline}`;
 
   let client = null, user = null, opts = null, ui = {}, timer = null, pending = null, lastSaved = null;

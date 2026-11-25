@@ -5,64 +5,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Quick Week Meal Plan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
-<link rel="stylesheet" href="/assets/site.css?v=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css?v=3">
 <style>
 *{box-sizing:border-box} [hidden]{display:none!important} img{max-width:100%}
 /* Layout: weekly plan + recipes in the main column, grocery checklist in a sticky side column (moves to the top on phones). */
-:root{
-  --bg:#f4f6fa; --surface:#ffffff; --fg:#101828; --muted:#5b6476; --line:#dde3ee;
-  --accent:#2563eb; --accent-soft:#e7eefd; --tomato:#c2410c; --done:#98a2b3;
-  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --body:"Inter", system-ui, -apple-system, sans-serif;
-  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
-}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0b1220; --surface:#121b2e; --fg:#e5eaf3; --muted:#94a3b8; --line:#23304a;
-  --accent:#60a5fa; --accent-soft:#15233d; --tomato:#fb923c; --done:#5b6880; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0b1220; --surface:#121b2e; --fg:#e5eaf3; --muted:#94a3b8; --line:#23304a;
-  --accent:#60a5fa; --accent-soft:#15233d; --tomato:#fb923c; --done:#5b6880; color-scheme:dark}
 
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55;
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 60px}
 .wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:36px;align-items:start}
-header{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:16px;border-bottom:2px solid var(--fg);padding-bottom:16px}
-h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,5vw,46px);line-height:1;margin:0;letter-spacing:-.02em;text-wrap:balance}
-h1 span{color:var(--accent)}
+header{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:16px;border-bottom:0;padding-bottom:16px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(30px,5vw,46px);line-height:1;margin:0;letter-spacing:-.02em;text-wrap:balance}
 .sub{color:var(--muted);margin:8px 0 0;max-width:60ch}
 .rules{display:flex;gap:8px;flex-wrap:wrap}
 .chip{font-family:var(--mono);font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:99px;background:var(--surface);white-space:nowrap}
 main{display:flex;flex-direction:column;gap:40px;min-width:0}
-h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0 0 4px;letter-spacing:-.01em}
+h2{font-family:var(--display);font-weight:600;font-size:24px;margin:0 0 4px;letter-spacing:-.01em}
 .lede{color:var(--muted);margin:0 0 16px}
-.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.eyebrow{font-size:13px;color:var(--muted);font-weight:600}
 
 /* week table */
-.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
 table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
 th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
 tr:last-child td{border-bottom:0}
-th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--bg)}
+th{font-size:13px;color:var(--muted);font-weight:600;background:var(--bg)}
 td.day{font-family:var(--display);font-weight:600;font-size:16px;white-space:nowrap}
 td.off{color:var(--muted);font-style:italic}
-.mins{font-family:var(--mono);font-size:11px;color:var(--accent);display:block}
+.mins{font-size:12px;color:var(--muted);display:block}
 
 /* prep */
 .prep{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;counter-reset:s}
-.step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
 .step b{display:block;font-family:var(--display);font-size:16px;margin-bottom:2px}
 .step .t{font-family:var(--mono);font-size:11px;color:var(--tomato)}
 .step p{margin:6px 0 0;font-size:14px;color:var(--muted)}
 
 /* recipes */
 .recipes{display:flex;flex-direction:column;gap:8px}
-details{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:16px}
 summary{cursor:pointer;list-style:none;display:flex;gap:12px;align-items:baseline;justify-content:space-between;padding:12px 16px;flex-wrap:wrap}
 summary::-webkit-details-marker{display:none}
-summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:16px}
 summary .n{font-family:var(--display);font-weight:600;font-size:17px}
-summary .n small{font-family:var(--body);font-weight:500;color:var(--muted);font-size:12px;margin-right:8px;text-transform:uppercase;letter-spacing:.08em}
+summary .n small{font-family:var(--body);font-weight:500;color:var(--muted);font-size:12px;margin-right:8px;letter-spacing:.08em}
 summary .mins{display:inline}
 details[open] summary{border-bottom:1px solid var(--line)}
 .rbody{padding:12px 16px 16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:20px}
@@ -71,25 +57,25 @@ details[open] summary{border-bottom:1px solid var(--line)}
 .tip{grid-column:1/-1;font-size:13px;background:var(--accent-soft);border-radius:8px;padding:8px 12px;margin:0}
 
 /* grocery list */
-aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);background:var(--surface);border:1px solid var(--line);border-radius:12px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;min-width:0}
+aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);background:var(--surface);border:1px solid var(--line);border-radius:18px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;min-width:0}
 .listhead{padding:16px 18px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
 .listhead h2{margin:0}
 .progress{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
 .progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
 .count{font-family:var(--mono);font-size:12px;color:var(--muted)}
 .btns{display:flex;gap:8px;flex-wrap:wrap}
-button{font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
-button.primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+button{font:inherit;font-size:13px;font-weight:500;padding:7px 14px;border-radius:980px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .listbody{overflow-y:auto;padding:6px 18px 18px}
 .aisle{margin-top:14px}
-.aisle h3{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--tomato);margin:0 0 4px;font-weight:600}
+.aisle h3{font-size:13px;color:var(--fg);margin:0 0 4px;font-weight:600}
 label.item{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:start;padding:7px 0;border-bottom:1px dashed var(--line);cursor:pointer;font-size:14px}
 label.item input{width:17px;height:17px;margin:2px 0 0;accent-color:var(--accent)}
 label.item .q{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;text-align:right}
 label.item .for{display:block;font-size:12px;color:var(--muted)}
 label.item.got .nm{text-decoration:line-through;color:var(--done)}
-label.item.pantry .nm::after{content:"check pantry";margin-left:6px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 4px;vertical-align:1px}
+label.item.pantry .nm::after{content:"check pantry";margin-left:6px;font-size:13px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 4px;vertical-align:1px}
 .toast{font-size:12px;color:var(--accent);min-height:1em}
 .toast[hidden]{display:none}
 .copyfallback{width:100%;min-height:120px;font-family:var(--mono);font-size:12px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px}
@@ -165,7 +151,7 @@ label.item.pantry .nm::after{content:"check pantry";margin-left:6px;font-size:10
 </div>
 
 <script src="vendor/supabase-2.119.0.js"></script>
-<script src="sync.js?v=4"></script>
+<script src="sync.js?v=5"></script>
 <script>
 const WEEK = [
   ["Sun", null, null, ["Veggie omelet, toast & fruit", 15]],

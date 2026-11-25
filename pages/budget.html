@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Monthly Budget</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
-<link rel="stylesheet" href="/assets/site.css?v=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css?v=3">
 <style>
 .page{--maxw:1100px}
 .head-row{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
@@ -69,7 +69,7 @@
 .edit-row.c{grid-template-columns:minmax(0,1fr) 92px 30px}
 .edit-row input{width:100%;min-width:0;font:inherit;font-size:14px;padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
 .edit-row input.n{font-family:var(--mono);text-align:right}
-.edit-head{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:0;padding-bottom:0}
+.edit-head{font-size:13px;color:var(--muted);border-bottom:0;padding-bottom:0}
 .x{background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer;padding:0;line-height:1}
 .x:hover{color:var(--bad)}
 .foot-actions{display:flex;gap:8px;padding:10px 16px;flex-wrap:wrap}
@@ -126,7 +126,7 @@
 <footer class="site-foot" style="--maxw:1100px"><span>Mark Hutchinson</span><span><a href="/">Home</a> · <a href="/pages/">Life</a></span></footer>
 
 <script src="vendor/supabase-2.119.0.js"></script>
-<script src="sync.js?v=4"></script>
+<script src="sync.js?v=5"></script>
 <script>
 const KEY = "budget-v1";
 const uid = () => Math.random().toString(36).slice(2, 9);
